@@ -1,33 +1,28 @@
 =begin
+    
+    File:	examples/ex_alpha.pl
+	Author: Josiah Bryan, <jdb@wcoil.com>
+	Desc: 
 
-File:   letters.pl
-Author: Josiah Bryan, jdb@wcoil.com
-
-This is an example of image recognition.
-I have digitized 29 characters of the alphabet of the HP 28S
-into a 5*7 matrix. This script runs the learn() method for
-each letter, using each letters matrix as its own desired result
-pattern. Then we present the network with a deformed J and see how
-well it detects the pattern.
-
-I have included the complete learned network in letters.net. This should
-therefore load the network without having to learn it. If, for some reason,
-there is an error loading the network, it will procede to re-learn the network.
-
-NOTE: THE LEARNING LOOP TAKES A _VERY_ LONG TIME. (Up to 1 hour I have seen.)
+		This demonstrates the ability of a neural net to generalize and predict what the correct
+		result is for inputs that it has never seen before.
+		
+		This teaches the network to classify some twenty-nine seperate 35-byte bitmaps, and
+		then it inputs an never-before-seen bitmap and displays the classification the network 
+		gives for the unknown bitmap.
 
 =cut
 
 	use AI::NeuralNet::BackProp;
 
-	# Create a new network with 2 layers and 35 neurons in each layer.
-	my $net = new AI::NeuralNet::BackProp(2,35);
+	# Create a new network with 2 layers and 35 neurons in each layer, with 1 output neuron
+	my $net = new AI::NeuralNet::BackProp(2,35,1);
 	
 	# Debug level of 4 gives JUST learn loop iteteration benchmark and comparrison data 
 	# as learning progresses.
 	$net->debug(4);
 
-	my @letters = [            # All prototype inputs        
+	my $letters = [            # All prototype inputs        
         [
         2,1,1,1,2,             # Inputs are   
         1,2,2,2,1,             #  5*7 digitalized caracters 
@@ -36,7 +31,7 @@ NOTE: THE LEARNING LOOP TAKES A _VERY_ LONG TIME. (Up to 1 hour I have seen.)
         1,2,2,2,1,             # This is the alphabet of the
         1,2,2,2,1,             # HP 28S                      
         1,2,2,2,1,
-        ],[
+        ],[0],[
         1,1,1,1,2,
         1,2,2,2,1,
         1,2,2,2,1,
@@ -44,7 +39,7 @@ NOTE: THE LEARNING LOOP TAKES A _VERY_ LONG TIME. (Up to 1 hour I have seen.)
         1,2,2,2,1,
         1,2,2,2,1,
         1,1,1,1,2,
-        ],[
+        ],[1],[
         2,1,1,1,2,
         1,2,2,2,1,
         1,2,2,2,2,
@@ -52,7 +47,7 @@ NOTE: THE LEARNING LOOP TAKES A _VERY_ LONG TIME. (Up to 1 hour I have seen.)
         1,2,2,2,2,
         1,2,2,2,1,
         2,1,1,1,2,
-        ],[
+        ],[2],[
         1,1,1,2,2,
         1,2,2,1,2,
         1,2,2,2,1,
@@ -60,7 +55,7 @@ NOTE: THE LEARNING LOOP TAKES A _VERY_ LONG TIME. (Up to 1 hour I have seen.)
         1,2,2,2,1,
         1,2,2,1,2,
         1,1,1,2,2,
-        ],[
+        ],[4],[
         1,1,1,1,1,
         1,2,2,2,2,
         1,2,2,2,2,
@@ -68,7 +63,7 @@ NOTE: THE LEARNING LOOP TAKES A _VERY_ LONG TIME. (Up to 1 hour I have seen.)
         1,2,2,2,2,
         1,2,2,2,2,
         1,1,1,1,1,
-        ],[
+        ],[5],[
         1,1,1,1,1,
         1,2,2,2,2,
         1,2,2,2,2,
@@ -76,7 +71,7 @@ NOTE: THE LEARNING LOOP TAKES A _VERY_ LONG TIME. (Up to 1 hour I have seen.)
         1,2,2,2,2,
         1,2,2,2,2,
         1,2,2,2,2,
-		],[
+		],[6],[
         2,1,1,1,2,
         1,2,2,2,1,
         1,2,2,2,2,
@@ -84,7 +79,7 @@ NOTE: THE LEARNING LOOP TAKES A _VERY_ LONG TIME. (Up to 1 hour I have seen.)
         1,2,2,1,1,
         1,2,2,2,1,
         2,1,1,1,2,
-		],[
+		],[7],[
         1,2,2,2,1,
         1,2,2,2,1,
         1,2,2,2,1,
@@ -92,7 +87,7 @@ NOTE: THE LEARNING LOOP TAKES A _VERY_ LONG TIME. (Up to 1 hour I have seen.)
         1,2,2,2,1,
         1,2,2,2,1,
         1,2,2,2,1,
-		],[
+		],[8],[
         1,1,1,1,1,
         2,1,1,1,2,
         2,1,1,1,2,
@@ -100,7 +95,7 @@ NOTE: THE LEARNING LOOP TAKES A _VERY_ LONG TIME. (Up to 1 hour I have seen.)
         2,1,1,1,2,
         2,1,1,1,2,
         1,1,1,1,1,
-		],[
+		],[9],[
         2,2,2,2,1,
         2,2,2,2,1,
         2,2,2,2,1,
@@ -108,7 +103,7 @@ NOTE: THE LEARNING LOOP TAKES A _VERY_ LONG TIME. (Up to 1 hour I have seen.)
         2,2,2,2,1,
         1,2,2,2,1,
         2,1,1,1,2,
-		],[
+		],[10],[
         1,2,2,2,1,
         1,2,2,2,1,
         1,2,2,1,2,
@@ -116,7 +111,7 @@ NOTE: THE LEARNING LOOP TAKES A _VERY_ LONG TIME. (Up to 1 hour I have seen.)
         1,2,2,1,2,
         1,2,2,2,1,
         1,2,2,2,1,
-		],[
+		],[11],[
         1,2,2,2,2,
         1,2,2,2,2,
         1,2,2,2,2,
@@ -124,7 +119,7 @@ NOTE: THE LEARNING LOOP TAKES A _VERY_ LONG TIME. (Up to 1 hour I have seen.)
         1,2,2,2,2,
         1,2,2,2,2,
         1,1,1,1,1,
-		],[
+		],[12],[
         1,2,2,2,1,
         1,1,2,1,1,
         1,2,1,2,1,
@@ -132,7 +127,7 @@ NOTE: THE LEARNING LOOP TAKES A _VERY_ LONG TIME. (Up to 1 hour I have seen.)
         1,2,2,2,1,
         1,2,2,2,1,
         1,2,2,2,1,
-		],[
+		],[13],[
         1,2,2,2,1,
         1,2,2,2,1,
         1,1,2,2,1,
@@ -140,7 +135,7 @@ NOTE: THE LEARNING LOOP TAKES A _VERY_ LONG TIME. (Up to 1 hour I have seen.)
         1,2,2,1,1,
         1,2,2,2,1,
         1,2,2,2,1,
-		],[
+		],[14],[
         2,1,1,1,2,
         1,2,2,2,1,
         1,2,2,2,1,
@@ -148,7 +143,7 @@ NOTE: THE LEARNING LOOP TAKES A _VERY_ LONG TIME. (Up to 1 hour I have seen.)
         1,2,2,2,1,
         1,2,2,2,1,
         2,1,1,1,2,
-		],[
+		],[15],[
         1,1,1,1,2,
         1,2,2,2,1,
         1,2,2,2,1,
@@ -156,7 +151,7 @@ NOTE: THE LEARNING LOOP TAKES A _VERY_ LONG TIME. (Up to 1 hour I have seen.)
         1,2,2,2,2,
         1,2,2,2,2,
         1,2,2,2,2,
-		],[
+		],[16],[
         2,1,1,1,2,
         1,2,2,2,1,
         1,2,2,2,1,
@@ -164,7 +159,7 @@ NOTE: THE LEARNING LOOP TAKES A _VERY_ LONG TIME. (Up to 1 hour I have seen.)
         1,2,1,2,1,
         1,2,2,1,2,
         2,1,1,2,1,
-		],[
+		],[17],[
         1,1,1,1,2,
         1,2,2,2,1,
         1,2,2,2,1,
@@ -172,7 +167,7 @@ NOTE: THE LEARNING LOOP TAKES A _VERY_ LONG TIME. (Up to 1 hour I have seen.)
         1,2,1,2,2,
         1,2,2,1,2,
         1,2,2,2,1,
-		],[
+		],[18],[
         2,1,1,1,2,
         1,2,2,2,1,
         1,2,2,2,2,
@@ -180,7 +175,7 @@ NOTE: THE LEARNING LOOP TAKES A _VERY_ LONG TIME. (Up to 1 hour I have seen.)
         2,2,2,2,1,
         1,2,2,2,1,
         2,1,1,1,2,
-		],[
+		],[19],[
         1,1,1,1,1,
         2,2,1,2,2,
         2,2,1,2,2,
@@ -188,7 +183,7 @@ NOTE: THE LEARNING LOOP TAKES A _VERY_ LONG TIME. (Up to 1 hour I have seen.)
         2,2,1,2,2,
         2,2,1,2,2,
         2,2,1,2,2,
-		],[
+		],[20],[
         1,2,2,2,1,
         1,2,2,2,1,
         1,2,2,2,1,
@@ -196,7 +191,7 @@ NOTE: THE LEARNING LOOP TAKES A _VERY_ LONG TIME. (Up to 1 hour I have seen.)
         1,2,2,2,1,
         1,2,2,2,1,
         2,1,1,1,2,
-		],[
+		],[21],[
         1,2,2,2,1,
         1,2,2,2,1,
         1,2,2,2,1,
@@ -204,7 +199,7 @@ NOTE: THE LEARNING LOOP TAKES A _VERY_ LONG TIME. (Up to 1 hour I have seen.)
         1,2,2,2,1,
         2,1,2,1,2,
         2,2,1,2,2,
-		],[
+		],[22],[
         1,2,2,2,1,
         1,2,2,2,1,
         1,2,2,2,1,
@@ -212,7 +207,7 @@ NOTE: THE LEARNING LOOP TAKES A _VERY_ LONG TIME. (Up to 1 hour I have seen.)
         1,2,1,2,1,
         1,1,2,1,1,
         1,2,2,2,1,
-		],[
+		],[23],[
         1,2,2,2,1,
         1,2,2,2,1,
         2,1,2,1,2,
@@ -220,7 +215,7 @@ NOTE: THE LEARNING LOOP TAKES A _VERY_ LONG TIME. (Up to 1 hour I have seen.)
         2,1,2,1,2,
         1,2,2,2,1,
         1,2,2,2,1,
-		],[
+		],[24],[
         1,2,2,2,1,
         1,2,2,2,1,
         2,1,2,1,2,
@@ -228,7 +223,7 @@ NOTE: THE LEARNING LOOP TAKES A _VERY_ LONG TIME. (Up to 1 hour I have seen.)
         2,2,1,2,2,
         2,2,1,2,2,
         2,2,1,2,2,
-		],[
+		],[25],[
         1,1,1,1,1,
         2,2,2,2,1,
         2,2,2,1,2,
@@ -236,7 +231,7 @@ NOTE: THE LEARNING LOOP TAKES A _VERY_ LONG TIME. (Up to 1 hour I have seen.)
         2,1,2,2,2,
         1,2,2,2,2,
         1,1,1,1,1,
-		],[
+		],[26],[
         2,2,1,2,2,
         2,1,1,1,2,
         2,1,2,1,2,
@@ -244,7 +239,7 @@ NOTE: THE LEARNING LOOP TAKES A _VERY_ LONG TIME. (Up to 1 hour I have seen.)
         1,1,1,1,1,
         1,1,2,1,1,
         1,2,2,2,1,
-		],[
+		],[27],[
         1,2,2,2,1,
         2,1,2,2,1,
         2,2,1,1,2,
@@ -252,7 +247,7 @@ NOTE: THE LEARNING LOOP TAKES A _VERY_ LONG TIME. (Up to 1 hour I have seen.)
         2,2,1,2,2,
         2,1,2,2,2,
         1,2,2,2,2,
-		],[
+		],[28],[
         1,2,2,2,1,
         1,2,2,2,1,
         1,2,1,2,1,
@@ -260,7 +255,7 @@ NOTE: THE LEARNING LOOP TAKES A _VERY_ LONG TIME. (Up to 1 hour I have seen.)
         1,1,1,1,1,
         2,1,2,1,2,
         2,1,2,1,2,
-        ],[
+        ],[29],[
         1,2,2,2,1,
         1,2,2,2,1,
         1,2,2,2,1,
@@ -271,49 +266,25 @@ NOTE: THE LEARNING LOOP TAKES A _VERY_ LONG TIME. (Up to 1 hour I have seen.)
         ]
      ];
 	
-	if(!$net->load("letters.net")) {
-		print "\nLearning started...\n";
-		
-		for(0..28) {
-			print "\nLearning index $_, map:\n";
-			$net->join_cols($letters[0][$_],5);
-			print $net->learn($letters[0][$_],$letters[0][$_],inc=>0.15);
-		}
-		
-		print "Learning done.\n";
+	if(!$net->load("letters.dat")) {
+		#$net->range(0..29);
+		$net->learn_set($letters);
+		$net->save("letters.dat");
 	}
 			
 	# Build a test map 
-	my @tmp	=	(1,2,2,2,1,
+	my $tmp	=	[2,1,1,1,2,
 				 1,2,2,2,1,
 				 1,2,2,2,1,
+				 1,1,1,1,1,
 				 1,2,2,2,1,
-				 1,1,2,1,1,
-				 2,1,2,1,2,
-				 2,2,1,2,2);
+				 1,2,2,2,1,
+				 1,2,2,2,1];
 	
 	# Display test map
 	print "\nTest map:\n";
-	$net->join_cols(\@tmp,5);
-	
-	print "Running test...\n";
-		                    
-	# Run the actual test and get an array refrence to the network output
-	my $map=$net->run(\@tmp);
-	
-	print "Test run complete.\n";
+	$net->join_cols($tmp,5);
 	
 	# Display network results
-	print "\nMatched test pattern to pattern index ".$net->pattern()."\n";
-	print "Mapping results from $map:\n";
-	$net->join_cols($map,5);
+	print "Letter index matched: ",$net->run($tmp)->[0],"\n";
 	
-	# Calculate percentage diffrence, returning a string formated with "%.1f", represinting
-	# the percent diffrence between the two array refences passed.
-	# FYI: I have found with the above test map and original maps, that the most difference,
-	# or 'noise' the network can handle is 40.0% before the network output map 'peaks' (all
-	# outputs high.) Of course, I have also seen it peek at 37.5% and lower, too. Maximum 
-	# noise I have acheived w/o peaking is 40.0%.
-	print "Percentage difference between original and test map: ".AI::NeuralNet::BackProp::pdiff($letters[0][$net->pattern()-1],\@tmp)."%\n";
-	
-	$net->save("letters.net");

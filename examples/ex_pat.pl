@@ -1,9 +1,10 @@
 =begin
 
-File:   ex2.pl
-Author: Tobias Bronx, tobiasb@odin.funcom.com
-
-This demonstrates simply pattern learning.
+	File:   examples/ex_pat.pl
+	Author: Tobias Bronx, <tobiasb@odin.funcom.com>
+	Desc:
+	
+		This demonstrates simply pattern learning.
 
 =cut
 

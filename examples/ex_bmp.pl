@@ -1,9 +1,10 @@
 =begin
 
-File:   images.pl
-Author: Josiah Bryan, jdb@wcoil.com
-
-This demonstrates simple classification of 6x6 bitmaps.
+	File:   examples/ex_bmp.pl
+	Author: Josiah Bryan, <jdb@wcoil.com>
+	Desc:
+	
+		This demonstrates simple classification of 6x6 bitmaps.
 
 =cut
 
@@ -15,10 +16,10 @@ This demonstrates simple classification of 6x6 bitmaps.
 	my $yres=5;
 	
 	# Create a new net with 3 layes, $xres*$yres inputs, and 1 output
-	my $net = AI::NeuralNet::BackProp->new(3,$xres*$yres,1);
+	my $net = AI::NeuralNet::BackProp->new(2,$xres*$yres,1);
 	
 	# Disable debugging
-	$net->debug(0);
+	$net->debug(4);
 	
 	# Create datasets.
 	my @data = ( 
@@ -56,6 +57,8 @@ This demonstrates simple classification of 6x6 bitmaps.
 	);
     
     
+	$net->range(1,5);
+	
 	# If we havnt saved the net already, do the learning
 	if(!$net->load('images.net')) {
 		print "\nLearning started...\n";

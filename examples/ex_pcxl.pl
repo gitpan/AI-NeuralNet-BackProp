@@ -1,10 +1,11 @@
 =begin
-
-File:   pcx.pl
-Author: Josiah Bryan, jdb@wcoil.com
-
-This demonstrates simple usage of the pcx loader.
-
+	
+	File:   examples/ex_pcxl.pl
+	Author: Josiah Bryan, jdb@wcoil.com
+	Desc:	
+		
+		This just demonstrates simple usage of the pcx loader.
+	
 =cut
 
 	use AI::NeuralNet::BackProp;

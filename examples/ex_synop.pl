@@ -1,3 +1,13 @@
+=begin
+    
+    File:	examples/ex_synop.pl
+	Author: Josiah Bryan, <jdb@wcoil.com>
+	Desc: 
+
+        This is the synopsis from the POD.
+		
+=cut
+
 	use AI::NeuralNet::BackProp;
 	
 	# Create a new network with 1 layer, 5 inputs, and 5 outputs.
