@@ -1,44 +1,46 @@
-=begin
+	use AI::NeuralNet::BackProp;
+	
+	# Create a new network with 1 layer, 5 inputs, and 5 outputs.
+	my $net = new AI::NeuralNet::BackProp(1,5,5);
+	
+	# Add a small amount of randomness to the network
+	$net->random(0.001);
 
-File:   test2.pl
-Author: Josiah Bryan, jdb@wcoil.com
+	# Demonstrate a simple learn() call
+	my @inputs = ( 0,0,1,1,1 );
+	my @ouputs = ( 1,0,1,0,1 );
+	
+	print $net->learn(\@inputs, \@outputs),"\n";
 
-Synopsis example code from embeded POD documentation.
+	# Create a data set to learn
+	my @set = (
+		[ 2,2,3,4,1 ], [ 1,1,1,1,1 ],
+		[ 1,1,1,1,1 ], [ 0,0,0,0,0 ],
+		[ 1,1,1,0,0 ], [ 0,0,0,1,1 ]	
+	);
+	
+	# Demo learn_set()
+	my $f = $net->learn_set(\@set);
+	print "Forgetfulness: $f unit\n";
+	
+	# Crunch a bunch of strings and return array refs
+	my $phrase1 = $net->crunch("I love neural networks!");
+	my $phrase2 = $net->crunch("Jay Lenno is wierd.");
+	my $phrase3 = $net->crunch("The rain in spain...");
+	my $phrase4 = $net->crunch("Tired of word crunching yet?");
 
-=cut
+	# Make a data set from the array refs
+	my @phrases = (
+		$phrase1, $phrase2,
+		$phrase3, $phrase4
+	);
 
-        use AI::NeuralNet::BackProp;
+	# Learn the data set	
+	$net->learn_set(\@phrases);
 	
-	# Create a new neural net with 2 layers and 3 neurons per layer
-	my $net = new AI::NeuralNet::BackProp(2,3);
+	# Run a test phrase through the network
+	my $test_phrase = $net->crunch("I love neural networking!");
+	my $result = $net->run($test_phrase);
 	
-#	$net->debug();
-	
-	# Associate first pattern and print benchmark
-	print "Associating (1,2,3) with (4,5,6)...\n";
-	print $net->learn([1,2,3],[4,5,6]);
-	
-	# Associate second pattern and print benchmark
-	print "Associating (4,5,6) with (1,2,3)...\n";
-	print $net->learn([4,5,6],[1,2,3]);
-	
-	# Run a test pattern
-	print "\nFirst run output: (".join(',',@{$net->run([1,3,2])}).")\n\n";
-	
-	
-	# Declare patterns to learn
-	my @pattern = (	15, 3,  5  );
-	my @result  = ( 16, 10, 11 );
-	
-	# Display patterns to associate using sub interpolation into a string.
-	print "Associating (@{[join(',',@pattern)]}) with (@{[join(',',@result)]})...\n";
-	
-	# Run learning loop and print benchmarking info.
-	print $net->learn(\@pattern,\@result);
-	
-	# Run final test
-	my @test 	  = ( 14, 9,  3  );
-	my $array_ref = $net->run(\@test);
-	
-	# Display test output
-	print "\nSecond run output: (".join(',',@{$array_ref}).")\n";
+	# Get this, it prints "Jay Leno is  networking!" ...  LOL!
+	print $net->uncrunch($result),"\n";

@@ -51,6 +51,8 @@ pcx functions, as well as high() and low().
 	print "Learning high block...\n";
 	print $net->learn($blocks[$net->high(\@score)],$blocks[$net->high(\@score)]);
 	
+	$net->save("pcx2.net");
+	
 	print "Learning low block...\n";
 	$net->learn($blocks[$net->low(\@score)],$blocks[$net->low(\@score)]);
 	

@@ -13,20 +13,15 @@
 
 	<LI><A HREF="#name">NAME</A></LI>
 	<LI><A HREF="#synopsis">SYNOPSIS</A></LI>
+	<LI><A HREF="#updates">UPDATES</A></LI>
 	<LI><A HREF="#description">DESCRIPTION</A></LI>
 	<UL>
 
 		<LI><A HREF="#methods">METHODS</A></LI>
 	</UL>
 
-	<LI><A HREF="#other included packages">OTHER INCLUDED PACKAGES</A></LI>
 	<LI><A HREF="#notes">NOTES</A></LI>
-	<UL>
-
-		<LI><A HREF="#run() and slow_run() compared"><CODE>run()</CODE> and <CODE>slow_run()</CODE> compared</A></LI>
-		<LI><A HREF="#load() and save()"><CODE>load()</CODE> and <CODE>save()</CODE></A></LI>
-	</UL>
-
+	<LI><A HREF="#other included packages">OTHER INCLUDED PACKAGES</A></LI>
 	<LI><A HREF="#bugs">BUGS</A></LI>
 	<LI><A HREF="#author">AUTHOR</A></LI>
 	<LI><A HREF="#download">DOWNLOAD</A></LI>
@@ -40,49 +35,72 @@
 <P>
 <HR>
 <H1><A NAME="synopsis">SYNOPSIS</A></H1>
+<P>use AI::NeuralNet::BackProp;
+</P>
 <PRE>
-        use AI::NeuralNet::BackProp;
+
+        # Create a new network with 1 layer, 5 inputs, and 5 outputs.
+        my $net = new AI::NeuralNet::BackProp(1,5,5);</PRE>
+<PRE>
+
+        # Add a small amount of randomness to the network
+        $net-&gt;random(0.001);</PRE>
+<PRE>
+        # Demonstrate a simple learn() call
+        my @inputs = ( 0,0,1,1,1 );
+        my @ouputs = ( 1,0,1,0,1 );
 </PRE>
 <PRE>
 
-        # Create a new neural net with 2 layers and 3 neurons per layer
-        my $net = new AI::NeuralNet::BackProp(2,3);</PRE>
+        print $net-&gt;learn(\@inputs, \@outputs),&quot;\n&quot;;</PRE>
+<PRE>
+        # Create a data set to learn
+        my @set = (
+                [ 2,2,3,4,1 ], [ 1,1,1,1,1 ],
+                [ 1,1,1,1,1 ], [ 0,0,0,0,0 ],
+                [ 1,1,1,0,0 ], [ 0,0,0,1,1 ]    
+        );
+</PRE>
 <PRE>
 
-        # Associate first pattern and print benchmark
-        print &quot;Associating (1,2,3) with (4,5,6)...\n&quot;;
-        print $net-&gt;learn([1,2,3],[4,5,6]);</PRE>
+        # Demo learn_set()
+        my $f = $net-&gt;learn_set(\@set);
+        print &quot;Forgetfulness: $f unit\n&quot;;</PRE>
 <PRE>
 
-        # Associate second pattern and print benchmark
-        print &quot;Associating (4,5,6) with (1,2,3)...\n&quot;;
-        print $net-&gt;learn([4,5,6],[1,2,3]);</PRE>
+        # Crunch a bunch of strings and return array refs
+        my $phrase1 = $net-&gt;crunch(&quot;I love neural networks!&quot;);
+        my $phrase2 = $net-&gt;crunch(&quot;Jay Lenno is wierd.&quot;);
+        my $phrase3 = $net-&gt;crunch(&quot;The rain in spain...&quot;);
+        my $phrase4 = $net-&gt;crunch(&quot;Tired of word crunching yet?&quot;);</PRE>
+<PRE>
+        # Make a data set from the array refs
+        my @phrases = (
+                $phrase1, $phrase2,
+                $phrase3, $phrase4
+        );</PRE>
+<PRE>
+        # Learn the data set    
+        $net-&gt;learn_set(\@phrases);
+</PRE>
 <PRE>
 
-        # Run a test pattern
-        print &quot;\nFirst run output: (&quot;.join(',',@{$net-&gt;run([1,3,2])}).&quot;)\n\n&quot;;</PRE>
+        # Run a test phrase through the network
+        my $test_phrase = $net-&gt;crunch(&quot;I love neural networking!&quot;);
+        my $result = $net-&gt;run($test_phrase);</PRE>
 <PRE>
 
-        # Declare patterns to learn
-        my @pattern = ( 15, 3,  5  );
-        my @result  = ( 16, 10, 11 );</PRE>
-<PRE>
-
-        # Display patterns to associate using sub interpolation into a string.
-        print &quot;Associating (@{[join(',',@pattern)]}) with (@{[join(',',@result)]})...\n&quot;;</PRE>
-<PRE>
-
-        # Run learning loop and print benchmarking info.
-        print $net-&gt;learn(\@pattern,\@result);</PRE>
-<PRE>
-
-        # Run final test
-        my @test          = ( 14, 9,  3  );
-        my $array_ref = $net-&gt;run(\@test);</PRE>
-<PRE>
-
-        # Display test output
-        print &quot;\nSecond run output: (&quot;.join(',',@{$array_ref}).&quot;)\n&quot;;</PRE>
+        # Get this, it prints &quot;Jay Leno is  networking!&quot; ...  LOL!
+        print $net-&gt;uncrunch($result),&quot;\n&quot;;</PRE>
+<P>
+<HR>
+<H1><A NAME="updates">UPDATES</A></H1>
+<P>This is version 0.77, a complete internal upgrade from version 0.42. A new feature
+is the introduction of a randomness factor in the network, optional to disable. The 
+restriction on 0s are removed, so you can run any network you like. See NOTES on using 0s with 
+randomness disabled, below. Included is an improved <A HREF="#item_learn"><CODE>learn()</CODE></A> function, and a much more accurate 
+internal fixed-point system for learning. Also included is automated learning of input sets. See
+<A HREF="#item_learn_set"><CODE>learn_set()</CODE></A> and <CODE>learn_rand_set()</CODE></P>
 <P>
 <HR>
 <H1><A NAME="description">DESCRIPTION</A></H1>
@@ -97,9 +115,9 @@ neruons of the network are implemented via the AI::NeuralNet::BackProp::neuron p
 You constuct a new network via the new constructor:</PRE>
 <PRE>
 
-        my $net = new AI::NeuralNet::BackProp(2,3);</PRE>
-<P>The <CODE>new()</CODE> constructor accepts two arguments, $layers and $size (in this example, $layers 
-is 2 and $size is 3).</P>
+        my $net = new AI::NeuralNet::BackProp(2,3,1);</PRE>
+<P>The <CODE>new()</CODE> constructor accepts two arguments and one optional argument, $layers, $size, 
+and $outputs is optional (in this example, $layers is 2, $size is 3, and $outputs is 1).</P>
 <P>$layers specifies the number of layers, including the input
 and the output layer, to use in each neural grouping. A new
 neural grouping is created for each pattern learned. Layers
@@ -113,16 +131,16 @@ This diagram illustrates a simple network, created with a call
 to &quot;new AI::NeuralNet::BackProp(2,2)&quot; (2 layers, 2 neurons/layer).</PRE>
 <PRE>
 
-         input
-         /  \
-        O    O
-        |\  /|
-        | \/ |
-        | /\ |
-        |/  \|
-        O    O
-         \  /
-        mapper</PRE>
+     input
+     /  \
+    O    O
+    |\  /|
+    | \/ |
+    | /\ |
+    |/  \|
+    O    O
+     \  /
+    mapper</PRE>
 <P>In this diagram, each neuron is connected to one input of every
 neuron in the layer below it, but there are not connections
 between neurons in the same layer. Weights of the connection
@@ -164,14 +182,10 @@ refrences of $size length. Example:</P>
         my @res = (1,0);</PRE>
 <PRE>
 
-        $net-&gt;learn(\@map,\@res [, $inc]);</PRE>
+        $net-&gt;learn(\@map,\@res);</PRE>
 <PRE>
 
         my $result = $net-&gt;run(\@map);</PRE>
-<P>$inc is an optinal learning speed increment. Good values are around 0.20
-and 0.30. You can experiement with $inc to achieve faster learning speeds.
-Some values of $inc work better for different maps. If $inc is ommitted,
-it will default to 0.30 for $inc internally.</P>
 <P>Now $result will conain (1,0), effectivly flipping the input pattern
 around. Obviously, the larger $size is, the longer it will take
 to learn a pattern. <CODE>Learn()</CODE> returns a string in the form of</P>
@@ -203,74 +217,128 @@ the results the same as the above examples (as an array ref from $net-&gt;run())
 <P>
 <H2><A NAME="methods">METHODS</A></H2>
 <DL>
-<DT><STRONG><A NAME="item_BackProp">new AI::NeuralNet::BackProp($layers, $size)</A></STRONG><BR>
+<DT><STRONG><A NAME="item_BackProp">new AI::NeuralNet::BackProp($layers, $size [, $outputs])</A></STRONG><BR>
 <DD>
 Returns a newly created neural network from an <CODE>AI::NeuralNet::BackProp</CODE>
 object. Each group of this network will have <CODE>$layers</CODE> number layers in it
 and each layer will have <CODE>$size</CODE> number of neurons in that layer.
+<P>There is an optional parameter of $outputs, which specifies the number
+of output neurons to provide. If $outputs is not specified, $outputs
+defaults to equal $size. $outputs may not exceed $size. If $outputs
+exceeds $size, the <CODE>new()</CODE> constructor will return undef.</P>
 <P>Before you can really do anything useful with your new neural network
 object, you need to teach it some patterns. See the <A HREF="#item_learn"><CODE>learn()</CODE></A> method, below.</P>
 <P></P>
-<DT><STRONG><A NAME="item_learn">$net-&gt;learn($input_map_ref, $desired_result_ref [, $learning_gradient ]);</A></STRONG><BR>
+<DT><STRONG><A NAME="item_learn">$net-&gt;learn($input_map_ref, $desired_result_ref [, options ]);</A></STRONG><BR>
 <DD>
 This will 'teach' a network to associate an new input map with a desired resuly.
 It will return a string containg benchmarking information. You can retrieve the
 pattern index that the network stored the new input map in after <A HREF="#item_learn"><CODE>learn()</CODE></A> is complete
-with the <A HREF="#item_pattern"><CODE>pattern()</CODE></A> method, below.
-<P>The first two arguments must be array refs, and must be of the same length.</P>
+with the <CODE>pattern()</CODE> method, below.
+<P>The first two arguments must be array refs, and they may be of different lengths.</P>
+<P>Options should be written on hash form. There are three options:
+</P>
+<PRE>
+
+         inc    =&gt;      $learning_gradient
+         max    =&gt;      $maximum_iterations
+         error  =&gt;      $maximum_allowable_percentage_of_error</PRE>
 <P>$learning_gradient is an optional value used to adjust the weights of the internal
-connections. If $learning_gradient is ommitted, it defaults to 0.30.</P>
+connections. If $learning_gradient is ommitted, it defaults to 0.20.
+</P>
+<PRE>
+
+$maximum_iterations is the maximum numbers of iteration the loop should do.
+It defaults to 1024.  Set it to 0 if you never want the loop to quit before
+the pattern is perfectly learned.</PRE>
+<P>$maximum_allowable_percentage_of_error is the maximum allowable error to have. If 
+this is set, then <A HREF="#item_learn"><CODE>learn()</CODE></A> will return when the perecentage difference between the
+actual results and desired results falls below $maximum_allowable_percentage_of_error.
+If you do not include 'error', or $maximum_allowable_percentage_of_error is set to -1,
+then <A HREF="#item_learn"><CODE>learn()</CODE></A> will not return until it gets an exact match for the desired result OR it
+reaches $maximum_iterations.</P>
+<P></P>
+<DT><STRONG><A NAME="item_learn_set">$net-&gt;learn_set(\@set, [ options ]);</A></STRONG><BR>
+<DD>
+This takes the same options as <A HREF="#item_learn"><CODE>learn()</CODE></A> and allows you to specify a set to learn, rather
+than individual patterns. <A HREF="#item_learn_set"><CODE>learn_set()</CODE></A> will return an integer specifying the amount of forgetfulness
+when all the patterns are learned. If the learn_set()-specific option 'p' is set true, as in 
+'p =&gt; 1' in the hash of options, then it will return a percentage represting the amount of forgetfullness,
+rather than an integer.
+<P>NOTE: I have disabled percentage returns, so it will always return a integer, for now. I disabled
+it because I found there is a problem with the array refs and percentages when I was writing 
+the new synopsis, so for now it returns intergers, no matter what the 'p' option is.</P>
+<P>Example:</P>
+<PRE>
+        # Data from 1989 (as far as I know..this is taken from example data on BrainMaker)
+        my @data = ( 
+                #       Mo  CPI  CPI-1 CPI-3    Oil  Oil-1 Oil-3    Dow   Dow-1 Dow-3   Dow Ave (output)
+                [       1,      229, 220,  146,         20.0, 21.9, 19.5,       2645, 2652, 2597],      [       2647  ],
+                [       2,      235, 226,  155,         19.8, 20.0, 18.3,       2633, 2645, 2585],      [       2637  ],
+                [       3,      244, 235,  164,         19.6, 19.8, 18.1,       2627, 2633, 2579],      [       2630  ],
+                [       4,      261, 244,  181,         19.6, 19.6, 18.1,       2611, 2627, 2563],      [       2620  ],
+                [       5,      276, 261,  196,         19.5, 19.6, 18.0,       2630, 2611, 2582],      [       2638  ],
+                [       6,      287, 276,  207,         19.5, 19.5, 18.0,       2637, 2630, 2589],      [       2635  ],
+                [       7,      296, 287,  212,         19.3, 19.5, 17.8,       2640, 2637, 2592],      [       2641  ]                 
+        );
+</PRE>
+<PRE>
+
+        # Learn the set
+        my $f = learn_set(\@data, 
+                                          inc   =&gt;      0.1,    
+                                          max   =&gt;      500,
+                                          p             =&gt;      1
+                                         );</PRE>
+<PRE>
+
+        # Print it 
+        print &quot;Forgetfullness: $f%&quot;;</PRE>
+<P></P>
+<PRE>
+
+This is a snippet from the example script examples/finance.pl, which demonstrates DOW average
+prediction for the next month. A more simple set defenition would be as such:</PRE>
+<PRE>
+        my @data = (
+                [ 0,1 ], [ 1 ],
+                [ 1,0 ], [ 0 ]
+        );
+</PRE>
+<PRE>
+
+        $net-&gt;learn_set(\@data);</PRE>
+<PRE>
+
+Same effect as above, but not the same data (obviously).</PRE>
+<P></P>
+<DT><STRONG><A NAME="item_learn_set_rand">$net-&gt;learn_set_rand(\@set, [ options ]);</A></STRONG><BR>
+<DD>
+This takes the same options as <A HREF="#item_learn"><CODE>learn()</CODE></A> and allows you to specify a set to learn, rather
+than individual patterns.
+<P><A HREF="#item_learn_set_rand"><CODE>learn_set_rand()</CODE></A> differs from <A HREF="#item_learn_set"><CODE>learn_set()</CODE></A> in that it learns the patterns in a random order,
+each pattern once, rather than in the order that they are in the array. This returns a true
+value (1) instead of a forgetfullnes factor.</P>
+<P>Example:</P>
+<PRE>
+        my @data = (
+                [ 0,1 ], [ 1 ],
+                [ 1,0 ], [ 0 ]
+        );
+</PRE>
+<PRE>
+
+        $net-&gt;learn_set_rand(\@data);</PRE>
 <P></P>
 <DT><STRONG><A NAME="item_run">$net-&gt;run($input_map_ref);</A></STRONG><BR>
 <DD>
-This compares the input map with the learn()ed input map of each group, and the 
-group who's comparission comes out as the lowest percentage difference is 
-then used to run the input map.
+This method will apply the given array ref at the input layer of the neural network.
 <P>It will return undef on an error. An error is caused by one of two events.</P>
 <P>The first is the possibility that the argument passed is not an array ref. If it
 is not an array ref, it returns silently a value of undef.</P>
-<P>The other condition that could cause an error is the fact that your map contained an 
-element with an undefined value. We don't allow this because it has been in testing that
-an undefined value can never be weighted. We all know that 12958710924 times 0 is still
-0, right? The network can't handle that, though. It will still try to apply as much weight
-as it can to a 0 value, but the weighting will  always come back 0, and therefore, never be able
-to match the desired result output, thereby creating an infinite <A HREF="#item_learn"><CODE>learn()</CODE></A> loop cycle. Soooo...
-to prevent the infinite looping, we simply don't allow 0 values to be run. You can always
-shift all values of your map up one number to account for this if need be, and then subtract
-one number from every element of the output to shift it down again. Let me know if anyone 
-comes up with a better way to do this.</P>
-<P><A HREF="#item_run"><CODE>run()</CODE></A> will store the pattern index of the group as created by learn(), so it can be 
-retrieved with the <A HREF="#item_pattern"><CODE>pattern()</CODE></A> method, below.</P>
-<P>See notes on comparison between <A HREF="#item_run"><CODE>run()</CODE></A> and <A HREF="#item_slow_run"><CODE>slow_run()</CODE></A> in NOTES section, below.</P>
-<P></P>
-<DT><STRONG><A NAME="item_slow_run">$net-&gt;slow_run($input_map_ref);</A></STRONG><BR>
-<DD>
-When called with an array refrence to a pattern, returns a refrence
-to an array associated with that pattern. See usage in documentatio above.
-<P>This <A HREF="#item_slow_run"><CODE>slow_run()</CODE></A> is different from run(), above, in that, the <A HREF="#item_run"><CODE>run()</CODE></A> above
-compares the input map with the learn()ed input map of each group, and the 
-group who's comparission comes out as the lowest percentage difference is 
-then used to run the input map.</P>
-<P>This <A HREF="#item_slow_run"><CODE>slow_run()</CODE></A> runs the input map through every neuron group and then compares
-the result <CODE>map()</CODE> with the learn()ed result map, and the result map that has the
-lowest comparrison percentage is returned as the output map. Some may argue
-that this could be more accurate. I don't know. I plan to run some more tests
-on the two methods, but right now I don't have the time. If anyone does 
-come up with any results, or even a better way to sort the outputs, let me know
-please (<A HREF="mailto:jdb@wcoil.com">jdb@wcoil.com</A>)</P>
-<P><A HREF="#item_slow_run"><CODE>slow_run()</CODE></A> will store the pattern index of the group as created by learn(), so it can be 
-retrieved with the <A HREF="#item_pattern"><CODE>pattern()</CODE></A> method, below.</P>
-<P>See notes on comparison between <A HREF="#item_run"><CODE>run()</CODE></A> and <A HREF="#item_slow_run"><CODE>slow_run()</CODE></A> in NOTES section, below.</P>
-<P></P>
-<DT><STRONG><A NAME="item_pattern">$net-&gt;pattern();</A></STRONG><BR>
-<DD>
-This will return the pattern index of the last map learned, or the pattern index of the
-last map matched, whichever occured most recently.
-<P>This is useful if you don't care about the mapping output, but just what it mapped.
-For example, in the letters.pl example under the ./examples/ directory in the installation
-tree that you should have gotten when you downloaded this pacakge, this method is used
-to determine which letter was matched, rather than what the output is. See letters.pl
-for example usage.</P>
+<P>UPDATED: You can now run maps with a 0 value. Beware though, it may not <A HREF="#item_learn"><CODE>learn()</CODE></A> a 0 value 
+in the input map if you have randomness disabled. See NOTES on using a 0 value with randomness
+disabled.</P>
 <P></P>
 <DT><STRONG><A NAME="item_benchmarked">$net-&gt;benchmarked();</A></STRONG><BR>
 <DD>
@@ -300,6 +368,16 @@ I used level 4 debugging quite often in creating the letters.pl example script a
 example script.</P>
 <P>Toggles debuging off when called with no arguments.</P>
 <P></P>
+<DT><STRONG><A NAME="item_save">$net-&gt;save($filename);</A></STRONG><BR>
+<DD>
+This will save the complete state of the network to disk, including all weights and any
+words crunched with <A HREF="#item_crunch"><CODE>crunch()</CODE></A> .
+<P></P>
+<DT><STRONG><A NAME="item_load">$net-&gt;load($filename);</A></STRONG><BR>
+<DD>
+This will load from disk any network saved by <A HREF="#item_save"><CODE>save()</CODE></A> and completly restore the internal
+state at the point it was <A HREF="#item_save"><CODE>save()</CODE></A> was called at.
+<P></P>
 <DT><STRONG><A NAME="item_join_cols">$net-&gt;join_cols($array_ref,$row_length_in_elements,$high_state_character,$low_state_character);</A></STRONG><BR>
 <DD>
 This is more of a utility function than any real necessary function of the package.
@@ -318,10 +396,176 @@ This function is used VERY heavily internally to calculate the difference in per
 between elements of the two array refs passed. It returns a %.02f (sprintf-format) 
 percent sting.
 <P></P>
+<DT><STRONG><A NAME="item_p">$net-&gt;p($a,$b);</A></STRONG><BR>
+<DD>
+Returns a floating point number which represents $a as a percentage of $b.
+<P></P>
 <DT><STRONG><A NAME="item_intr">$net-&gt;intr($float);</A></STRONG><BR>
 <DD>
-Rounds a floating-point number passed to an integer using <CODE>sprintf()</CODE> and <CODE>int()</CODE> , Provides
+Rounds a floating-point number rounded to an integer using <CODE>sprintf()</CODE> and <CODE>int()</CODE> , Provides
 better rounding than just calling <CODE>int()</CODE> on the float. Also used very heavily internally.
+<P></P>
+<DT><STRONG><A NAME="item_high">$net-&gt;high($array_ref);</A></STRONG><BR>
+<DD>
+Returns the index of the element in array REF passed with the highest comparative value.
+<P></P>
+<DT><STRONG><A NAME="item_low">$net-&gt;low($array_ref);</A></STRONG><BR>
+<DD>
+Returns the index of the element in array REF passed with the lowest comparative value.
+<P></P>
+<DT><STRONG><A NAME="item_show">$net-&gt;show();</A></STRONG><BR>
+<DD>
+This will dump a simple listing of all the weights of all the connections of every neuron
+in the network to STDIO.
+<P></P>
+<DT><STRONG><A NAME="item_crunch">$net-&gt;crunch($string);</A></STRONG><BR>
+<DD>
+UPDATE: Now you can use a variabled instead of using qw(). Strings will be split internally.
+Do not use <CODE>qw()</CODE> to pass strings to crunch.
+<P>This splits a string passed with /[\s\t]/ into an array ref containing unique indexes
+to the words. The words are stored in an intenal array and preserved across <A HREF="#item_load"><CODE>load()</CODE></A> and <A HREF="#item_save"><CODE>save()</CODE></A>
+calls. This is designed to be used to generate unique maps sutible for passing to <A HREF="#item_learn"><CODE>learn()</CODE></A> and 
+<A HREF="#item_run"><CODE>run()</CODE></A> directly. It returns an array ref.</P>
+<P>The words are not duplicated internally. For example:</P>
+<PRE>
+        $net-&gt;crunch(&quot;How are you?&quot;);</PRE>
+<P>Will probably return an array ref containing 1,2,3. A subsequent call of:</P>
+<PRE>
+    $net-&gt;crunch(&quot;How is Jane?&quot;);</PRE>
+<P>Will probably return an array ref containing 1,4,5. Notice, the first element stayed
+the same. That is because it already stored the word ``How''. So, each word is stored
+only once internally and the returned array ref reflects that.</P>
+<P></P>
+<DT><STRONG><A NAME="item_uncrunch">$net-&gt;uncrunch($array_ref);</A></STRONG><BR>
+<DD>
+Uncrunches a map (array ref) into an array of words (not an array ref) and returns array.
+This is ment to be used as a counterpart to the <A HREF="#item_crunch"><CODE>crunch()</CODE></A> method, above, possibly to <A HREF="#item_uncrunch"><CODE>uncrunch()</CODE></A>
+the output of a <A HREF="#item_run"><CODE>run()</CODE></A> call. Consider the below code (also in ./examples/ex1.pl):
+
+<PRE>
+
+        use AI::NeuralNet::BackProp;
+        my $net = AI::NeuralNet::BackProp-&gt;new(2,3);</PRE>
+<PRE>
+
+        for (0..3) {
+                $net-&gt;learn($net-&gt;crunch(&quot;I love chips.&quot;),  $net-&gt;crunch(qw(That's Junk Food!&quot;));
+                $net-&gt;learn($net-&gt;crunch(&quot;I love apples.&quot;), $net-&gt;crunch(&quot;Good, Healthy Food.&quot;));
+                $net-&gt;learn($net-&gt;crunch(&quot;I love pop.&quot;),    $net-&gt;crunch(&quot;That's Junk Food!&quot;));
+                $net-&gt;learn($net-&gt;crunch(&quot;I love oranges.&quot;),$net-&gt;crunch(&quot;Good, Healthy Food.&quot;));
+        }</PRE>
+<PRE>
+
+        my $response = $net-&gt;run($net-&gt;crunch(&quot;I love corn.&quot;));</PRE>
+<PRE>
+
+        print join(' ',$net-&gt;uncrunch($response));</PRE>
+<P>On my system, this responds with, ``Good, Healthy Food.'' If you try to run <A HREF="#item_crunch"><CODE>crunch()</CODE></A> with
+``I love pop.'', though, you will probably get ``Food! apples. apples.'' (At least it returns
+that on my system.) As you can see, the associations are not yet perfect, but it can make
+for some interesting demos!</P>
+<P></P>
+<DT><STRONG><A NAME="item_crunched">$net-&gt;crunched($word);</A></STRONG><BR>
+<DD>
+This will return undef if the word is not in the internal crunch list, or it will return the
+index of the word if it exists in the crunch list.
+<P></P>
+<DT><STRONG><A NAME="item_col_width">$net-&gt;col_width($width);</A></STRONG><BR>
+<DD>
+This is useful for formating the debugging output of Level 4 if you are learning simple 
+bitmaps. This will set the debugger to automatically insert a line break after that many
+elements in the map output when dumping the currently run map during a learn loop.
+<P>It will return the current width when called with a 0 or undef value.</P>
+<P></P>
+<DT><STRONG><A NAME="item_random">$net-&gt;random($rand);</A></STRONG><BR>
+<DD>
+This will set the randomness factor from the network. Default is 0.001. When called 
+with no arguments, or an undef value, it will return current randomness value. When
+called with a 0 value, it will disable randomness in the network. See NOTES on learning 
+a 0 value in the input map with randomness disabled.
+<P></P>
+<DT><STRONG><A NAME="item_load_pcx">$net-&gt;load_pcx($filename);</A></STRONG><BR>
+<DD>
+Oh heres a treat... this routine will load a PCX-format file (yah, I know ... ancient format ... but
+it is the only one I could find specs for to write it in Perl. If anyone can get specs for
+any other formats, or could write a loader for them, I would be very grateful!) Anyways, a PCX-format
+file that is exactly 320x200 with 8 bits per pixel, with pure Perl. It returns a blessed refrence to 
+a AI::NeuralNet::BackProp::PCX object, which supports the following routinges/members. See example 
+files pcx.pl and pcx2.pl in the ./examples/ directory.
+<P></P>
+<DT><STRONG><A NAME="item_%24pcx%2D%3E%7Bimage%7D">$pcx-&gt;{image}</A></STRONG><BR>
+<DD>
+This is an array refrence to the entire image. The array containes exactly 64000 elements, each
+element contains a number corresponding into an index of the palette array, details below.
+<P></P>
+<DT><STRONG><A NAME="item_%24pcx%2D%3E%7Bpalette%7D">$pcx-&gt;{palette}</A></STRONG><BR>
+<DD>
+This is an array ref to an AoH (array of hashes). Each element has the following three keys:
+
+<PRE>
+
+        $pcx-&gt;{palette}-&gt;[0]-&gt;{red};
+        $pcx-&gt;{palette}-&gt;[0]-&gt;{green};
+        $pcx-&gt;{palette}-&gt;[0]-&gt;{blue};</PRE>
+<P>Each is in the range of 0..63, corresponding to their named color component.</P>
+<P></P>
+<DT><STRONG><A NAME="item_get_block">$pcx-&gt;get_block($array_ref);</A></STRONG><BR>
+<DD>
+Returns a rectangular block defined by an array ref in the form of:
+
+<PRE>
+
+        [$left,$top,$right,$bottom]</PRE>
+<P>These must be in the range of 0..319 for $left and $right, and the range of 0..199 for
+$top and $bottom. The block is returned as an array ref with horizontal lines in sequental order.
+I.e. to get a pixel from [2,5] in the block, and $left-$right was 20, then the element in 
+the array ref containing the contents of coordinates [2,5] would be found by [5*20+2] ($y*$width+$x).
+</P>
+<PRE>
+
+        print (@{$pcx-&gt;get_block(0,0,20,50)})[5*20+2];</PRE>
+<P>This would print the contents of the element at block coords [2,5].</P>
+<P></P>
+<DT><STRONG><A NAME="item_get">$pcx-&gt;get($x,$y);</A></STRONG><BR>
+<DD>
+Returns the value of pixel at image coordinates $x,$y.
+$x must be in the range of 0..319 and $y must be in the range of 0..199.
+<P></P>
+<DT><STRONG><A NAME="item_rgb">$pcx-&gt;rgb($index);</A></STRONG><BR>
+<DD>
+Returns a 3-element array (not array ref) with each element corresponding to the red, green, or
+blue color components, respecitvely.
+<P></P>
+<DT><STRONG><A NAME="item_avg">$pcx-&gt;avg($index);</A></STRONG><BR>
+<DD>
+Returns the mean value of the red, green, and blue values at the palette index in $index.
+<P></P></DL>
+<P>
+<HR>
+<H1><A NAME="notes">NOTES</A></H1>
+<DL>
+<DT><STRONG><A NAME="item_Learning_0s_With_Randomness_Disabled">Learning 0s With Randomness Disabled</A></STRONG><BR>
+<DD>
+You can now use 0 values in any input maps. This is a good improvement over versions 0.40
+and 0.42, where no 0s were allowed because the learning would never finish learning completly
+with a 0 in the input.
+<P>Yet with the allowance of 0s, it requires one of two factors to learn correctly. Either you
+must enable randomness with $net-&gt;<A HREF="#item_random"><CODE>random(0.0001)</CODE></A> (Other valuse work, see <A HREF="#item_random"><CODE>random()</CODE></A> ), or you 
+must set an error-minum with the 'error =&gt; 5' option (you can use some other error value as well).</P>
+<P>When randomness is enabled (that is, when you call <A HREF="#item_random"><CODE>random()</CODE></A> with a value other than 0), it interjects
+a bit of randomness into the output of every neuron in the network, except for the input and output
+neurons. The randomness is interjected with rand()*$rand, where $rand is the value that was
+passed to <A HREF="#item_random"><CODE>random()</CODE></A> call. This assures the network that it will never have a pure 0 internally. It is
+bad to have a pure 0 internally because the weights cannot change a 0 when multiplied by a 0, the
+product stays a 0. Yet when a weight is multiplied by 0.00001, eventually with enough weight, it will
+be able to learn. With a 0 value instead of 0.00001 or whatever, then it would never be able
+to add enough weight to get anything other than a 0.</P>
+<P>The second option to allow for 0s is to enable a maximum error with the 'error' option in
+<A HREF="#item_learn"><CODE>learn()</CODE></A> , <A HREF="#item_learn_set"><CODE>learn_set()</CODE></A> , and <A HREF="#item_learn_set_rand"><CODE>learn_set_rand()</CODE></A> . This allows the network to not worry about
+learning an output perfectly.</P>
+<P>For accuracy reasons, it is recomended that you work with 0s using the <A HREF="#item_random"><CODE>random()</CODE></A> method.</P>
+<P>If anyone has any thoughts/arguments/suggestions for using 0s in the network, let me know
+at <A HREF="mailto:jdb@wcoil.com.">jdb@wcoil.com.</A></P>
 <P></P></DL>
 <P>
 <HR>
@@ -334,6 +578,9 @@ database system. It is used internally by <CODE>AI::NeuralNet::BackProp</CODE> f
 storage and retrival of network states. It can also be used independently
 of <CODE>AI::NeuralNet::BackProp</CODE>. PODs are not yet included for this package, I hope
 to include documentation for this package in future releases.
+<P><A HREF="#item_AI%3A%3ANeuralNet%3A%3ABackProp%3A%3AFile"><CODE>AI::NeuralNet::BackProp::File</CODE></A> depends on <CODE>Storable</CODE>, version 0.611 for low-
+level disk access. This dependency is noted in Makefile.PL, and should be handled
+automatically when you installe this <CODE>AI::NeuralNet::BackProp</CODE>.</P>
 <P></P>
 <DT><STRONG><A NAME="item_AI%3A%3ANeuralNet%3A%3ABackProp%3A%3Aneuron">AI::NeuralNet::BackProp::neuron</A></STRONG><BR>
 <DD>
@@ -356,42 +603,6 @@ you use the <A HREF="#item_run"><CODE>run()</CODE></A> or <A HREF="#item_learn">
 <P></P></DL>
 <P>
 <HR>
-<H1><A NAME="notes">NOTES</A></H1>
-<P>
-<H2><A NAME="run() and slow_run() compared"><A HREF="#item_run"><CODE>run()</CODE></A> and <A HREF="#item_slow_run"><CODE>slow_run()</CODE></A> compared</A></H2>
-<P>Authors thoughts...</P>
-<P>Hmm.. this could be something. I just realized:
-With <A HREF="#item_slow_run"><CODE>slow_run()</CODE></A> , it compares the _outputs_
-(result of each group running input map) with
-the desired result (output) map of each group. 
-<A HREF="#item_run"><CODE>run()</CODE></A> only compares the input map with the <A HREF="#item_learn"><CODE>learn()</CODE></A> ed
-input map.</P>
-<P>With <A HREF="#item_run"><CODE>run()</CODE></A> , that means that the first group that matches
-closest with <A HREF="#item_learn"><CODE>learn()</CODE></A> ed maps will be run, even if you
-have learned the same map with different desired results.</P>
-<P>With <A HREF="#item_slow_run"><CODE>slow_run()</CODE></A> , you could conceivably learn one input
-map with multiple desired results, and then <A HREF="#item_slow_run"><CODE>slow_run()</CODE></A> will
-match the result from the input map against all desired results,
-and return the one that matches closest.</P>
-<P>Intersting idea. For now, I don't see much of a need for 
-multiple desired asociations with same input map.</P>
-<P>Please let me know if anyone sees any other pros or cons
-to this issue, and what you think should be done.</P>
-<P>
-<H2><A NAME="load() and save()"><CODE>load()</CODE> and <CODE>save()</CODE></A></H2>
-<P>These are two methods I have not documented, as they don't 
-work (correctly) yet. They rely on the Storable package, not
-included, and the AI::NeuralNet::BackProp::File pacakge, 
-included here.</P>
-<P>The AI::NeuralNet::BackProp::File package works fine, the
-problem lies in the <CODE>load()</CODE> and <CODE>save()</CODE> routines themselves. 
-It seems the <CODE>freeze()</CODE> and <CODE>thaw()</CODE> functions aren't handling
-the refrences very well.</P>
-<P>I included these functions in this beta release in case anyone
-felt dareing enough to try to get them working themselves. If you
-do, <EM>please</EM> send me a copy of the code! :-)</P>
-<P>
-<HR>
 <H1><A NAME="bugs">BUGS</A></H1>
 <P>This is the beta release of <CODE>AI::NeuralNet::BackProp</CODE>, and that holding true, I am sure 
 there are probably bugs in here which I just have not found yet. If you find bugs in this module, I would 
@@ -404,7 +615,23 @@ send me the patched code, again at <EM>&lt;<A HREF="mailto:jdb@wcoil.com">jdb@wc
 <P>Josiah Bryan <EM>&lt;<A HREF="mailto:jdb@wcoil.com">jdb@wcoil.com</A>&gt;</EM></P>
 <P>Copyright (c) 2000 Josiah Bryan. All rights reserved. This program is free software; 
 you can redistribute it and/or modify it under the same terms as Perl itself.</P>
-<P>The <CODE>AI::NeuralNet::BackProp</CODE> and related modules are free software. THEY COMES WITHOUT WARRANTY OF ANY KIND.</P>
+<P>The <CODE>AI::NeuralNet::BackProp</CODE> and related modules are free software. THEY COME WITHOUT WARRANTY OF ANY KIND.
+</P>
+<PRE>
+
+=head1 THANX</PRE>
+<P>Below is a list of people that have helped, made suggestions, patches, etc. No particular order.</P>
+<PRE>
+                Tobias Bronx, F&lt;E&lt;lt&gt;tobiasb@odin.funcom.comE&lt;gt&gt;&gt; 
+                Pat Trainor, F&lt;E&lt;lt&gt;ptrainor@title14.comE&lt;gt&gt;&gt;
+                Steve Purkis, F&lt;E&lt;lt&gt;spurkis@epn.nuE&lt;gt&gt;&gt;
+                Rodin Porrata, F&lt;E&lt;lt&gt;rodin@ursa.llnl.govE&lt;gt&gt;&gt;</PRE>
+<P>Tobias was a great help with the initial releases, and helped with learning options and a great
+many helpful suggestions. Rodin has gave me some great ideas for the new internals. Steve is
+the author of AI::Perceptron, and gave some good suggestions for weighting the neurons. Pat 
+has been a great help for running the module through the works. Pat is the author of the new Inter 
+game, a in-depth strategy game. He is using a group of neural networks internally which provides
+a good test bed for coming up with new ideas for the network. Thankyou for all of your help, everybody.</P>
 <P>
 <HR>
 <H1><A NAME="download">DOWNLOAD</A></H1>

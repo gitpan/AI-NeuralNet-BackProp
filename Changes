@@ -6,3 +6,5 @@ Revision history for Perl extension AI::NeuralNet::BackProp.
 0.42  Wed Jul 26 05:30:19 2000
         - upgrade patch, by Josiah Bryan
 
+0.77  Sat Aug 11 03:27:29 2000
+        - major internal revision, by Josiah Bryan               

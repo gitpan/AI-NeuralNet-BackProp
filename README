@@ -1,17 +1,19 @@
-NOTE: This is version 0.42, the patch for the first public release 
-which was version 0.40. It includes several updates and fixes, 
-including more 'intelligent' learning, smaller memory size, actual 
-loading and saving of network, internal support for strings as network
-maps and targets, and integrated support for direct loading of PCX-format 
-bitmap files, as well as 11 new examples.
+This is version 0.77, a complete internal upgrade from version 0.42. A
+new feature is the introduction of a randomness factor in the network,
+optional to disable. The restriction on 0s are removed, so you can run
+any network you like. Included is an improved learn() function, and a much
+more accurate internal fixed-point system for learning. Also included is
+automated learning of input sets. See learn_set() and learn_rand_set().
+
+Be sure to look for the two brand new examples, finance.pl and
+images.pl. finance.pl demonstrates simple DOW prediction based on
+6 months of data in 1989, and images.pl demonstrates simple bitmap
+classification. Many other examples were updated and modfied.
 
 AI::NeuralNet::BackProp is a simply back-propagation,
 feed-foward neural network designed to learn using
 a generalization of the Delta rule and a bit of Hopefield
 theory. Still in beta stages.
-
-Be sure to checkout the ./examples/ directory for 17 different
-example scripts using the AI::NeuralNet::BackProp network.
 
 Use it, let me know what you all think. This is just a
 groud-up write of a neural network, no code stolen or

@@ -12,12 +12,12 @@ This demonstrates the crunch() and uncrunch() methods.
 	my $net = AI::NeuralNet::BackProp->new(2,3);
 	
 	for (0..3) {
-		$net->learn($net->crunch(qw(I love chips.)),  $net->crunch(qw(That's Junk Food!)));
-		$net->learn($net->crunch(qw(I love apples.)), $net->crunch(qw(Good, Healthy Food.)));
-		$net->learn($net->crunch(qw(I love pop.)),    $net->crunch(qw(That's Junk Food!)));
-		$net->learn($net->crunch(qw(I love oranges.)),$net->crunch(qw(Good, Healthy Food.)));
+		$net->learn($net->crunch("I love chips."),  $net->crunch("That's Junk Food!"));
+		$net->learn($net->crunch("I love apples."), $net->crunch("Good, Healthy Food."));
+		$net->learn($net->crunch("I love pop."),    $net->crunch("That's Junk Food!"));
+		$net->learn($net->crunch("I love oranges."),$net->crunch("Good, Healthy Food."));
 	}
 	
-	my $response = $net->run($net->crunch(qw(I love corn.)));
+	my $response = $net->run($net->crunch("I love corn."));
 	
 	print join(' ',$net->uncrunch($response));

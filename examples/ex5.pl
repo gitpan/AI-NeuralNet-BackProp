@@ -6,7 +6,7 @@ Author: Josiah Bryan, jdb@wcoil.com
 This demonstrates more simple pattern learning.
 This also demonstrates saving of the network state and
 showing the weight outputs. ex6.pl demonstrates loading the
-netwrok again.
+network again.
 
 =cut
 
