@@ -1,0 +1,24 @@
+AI::NeuralNet::BackProp is a simply back-propagation,
+feed-foward neural network designed to learn using
+a generalization of the Delta rule and a bit of Hopefield
+theory. Still in beta stages.
+
+Be sure to checkout the ./examples/ directory for 5 different
+example scripts using the AI::NeuralNet::BackProp network.
+
+Use it, let me know what you all think. This is just a
+groud-up write of a neural network, no code stolen or
+anything else. It uses the -IDEA- of back-propagation
+for error correction, with the -IDEA- of the delta
+rule and hopefield theory, as I understand them. So, don't expect
+a classicist view of nerual networking here. I simply wrote
+from operating theory, not math theory. Any die-hard neural
+networking gurus out there? Let me know how far off I am with
+this code! :-)
+	
+Thankyou all for your help.
+
+~ Josiah
+	
+jdb@wcoil.com
+http://www.josiah.countystart.com/modules/AI/cgi-bin/rec.pl - dowload latest dist
