@@ -1,6 +1,6 @@
 #!/usr/bin/perl	
 
-# $Id: BackProp.pm,v 0.40 2000/07/21 15:12:41 josiah Exp $
+# $Id: BackProp.pm,v 0.42 2000/07/26 04:10:11 josiah Exp $
 #
 # Copyright (c) 2000  Josiah Bryan  USA
 #
@@ -8,25 +8,24 @@
 #
 
 BEGIN {
-	$AI::NeuralNet::BackProp::VERSION = ".40";
+	$AI::NeuralNet::BackProp::VERSION = "0.42";
 }
 
 #
 # name:   AI::NeuralNet::BackProp
 #
 # author: Josiah Bryan 
-# date:   Friday July 21 2000
+# date:   Wednesday July 26 2000
 # desc:   A simple back-propagation, feed-foward neural network with
-#		  learning implemented via a generalization of Debbs rule and
+#		  learning implemented via a generalization of Dobbs rule and
 #		  several principals of Hoppfield networks. 
 # online: http://www.josiah.countystart.com/modules/AI/cgi-bin/rec.pl
 #
 
-	use strict;
-	use Carp; 
-
 package AI::NeuralNet::BackProp::neuron;
-
+	
+	use strict;
+	
 	# Dummy constructor
     sub new {
     	bless {}, shift
@@ -135,6 +134,7 @@ package AI::NeuralNet::BackProp::neuron;
 		# each neuron that has been bad (given incorrect output.)
 		for (0..$size-1) {
 			$value		=	$self->{SYNAPSES}->{LIST}->[$_]->{VALUE};
+			#$ammount	*=  $self->{SYNAPSES}->{LIST}->[$_]->{WEIGHT};
 			
 			# Here we just decide what to do with the value.
 			# If its the same, then somebody slipped up in calling us, so do nithing.
@@ -145,13 +145,14 @@ package AI::NeuralNet::BackProp::neuron;
 			# lower than the desired value. So, we increase the weight of this connection and
 			# then let all connected synapses adjust weight accordinly as well.
 			} elsif($value < $what) {                                     
-				$self->{SYNAPSES}->{LIST}->[$_]->{WEIGHT}  +=  $ammount;
-			    $self->{SYNAPSES}->{LIST}->[$_]->{PKG}->weight($ammount,$what);
+				my $m	=	$ammount*$self->{SYNAPSES}->{LIST}->[$_]->{WEIGHT};
+				$self->{SYNAPSES}->{LIST}->[$_]->{WEIGHT}  +=  $m;
+			    $self->{SYNAPSES}->{LIST}->[$_]->{PKG}->weight($m,$what);
 			    AI::NeuralNet::BackProp::out1("$value is less than $what (\$_ is $_, weight is $self->{SYNAPSES}->{LIST}->[$_]->{WEIGHT}, synapse is $self).\n");
 			
 			# Ditto as above block, except we take some weight off.
-			} else {
-			    $self->{SYNAPSES}->{LIST}->[$_]->{WEIGHT}  -=  $ammount;
+			} else {	
+				$self->{SYNAPSES}->{LIST}->[$_]->{WEIGHT}  -=  $ammount*$self->{SYNAPSES}->{LIST}->[$_]->{WEIGHT};
 				$self->{SYNAPSES}->{LIST}->[$_]->{PKG}->weight($ammount,$what);
 				AI::NeuralNet::BackProp::out1("$value is greater than $what (\$_ is $_, weight is $self->{SYNAPSES}->{LIST}->[$_]->{WEIGHT}, synapse is $self).\n");
 			}
@@ -166,7 +167,7 @@ package AI::NeuralNet::BackProp::neuron;
 		my $synapse	=	shift;
 		my $sid		=	$self->{SYNAPSES}->{SIZE} || 0;
 		$self->{SYNAPSES}->{LIST}->[$sid]->{PKG}		=	$synapse;
-		$self->{SYNAPSES}->{LIST}->[$sid]->{WEIGHT}		=	1.00+$AI::NeuralNet::BackProp::neuron::THRESHOLD+.01;
+		$self->{SYNAPSES}->{LIST}->[$sid]->{WEIGHT}		=	1.00		if(!$self->{SYNAPSES}->{LIST}->[$sid]->{WEIGHT});
 		$self->{SYNAPSES}->{LIST}->[$sid]->{FIRED}		=	0;       
 		AI::NeuralNet::BackProp::out1("$self: Registering sid $sid with weight $self->{SYNAPSES}->{LIST}->[$sid]->{WEIGHT}, package $self->{SYNAPSES}->{LIST}->[$sid]->{PKG}.\n");
 		$self->{SYNAPSES}->{SIZE} = ++$sid;
@@ -192,15 +193,17 @@ package AI::NeuralNet::BackProp::neuron;
 			 
 package AI::NeuralNet::BackProp;
 	
-	use Benchmark;
-	
+	use Benchmark;          
+	require Exporter;
+    
+	use strict;
 	
 #### This is commented out because the load() and save() routines right now
 #### don't work. If you want to try to get load() and store() working on your own, 
 #### uncomment this next line where it says "use Storable;" and uncomment the 
 #### "use Storable;" under the package declaration for AI::NeuralNet::BackProp::File.
 
-	###### use Storable qw(freeze thaw);
+	use Storable qw(freeze thaw);
 
 
 	# Returns the number of elements in an array ref, undef on error
@@ -239,7 +242,7 @@ package AI::NeuralNet::BackProp;
 		my $x;
 		foreach my $el (@{$map}) { 
 			my $str = ((int($el))?$a:$b);
-			$str=int($el)."\0" if(!$a);
+			$str=$el."\0" if(!$a);
 			print $str;
 			$x++;
 			if($x>$break-1) {
@@ -273,7 +276,81 @@ package AI::NeuralNet::BackProp;
 		}
 		return sprintf("%.1f",($diff/$a1s));
 	}
-
+	
+	# Returns the index of the element in array REF passed with the highest comparative value
+	sub high {
+		shift if(substr($_[0],0,4) eq 'AI::'); 
+		my $ref1	=	shift;
+		
+		my ($el,$len,$tmp);
+		foreach $el (@{$ref1}) {
+			$len++;
+		}
+		$tmp=0;
+		for my $x (0..$len-1) {
+			$tmp = $x if((@{$ref1})[$x] > (@{$ref1})[$tmp]);
+		}
+		return $tmp;
+	}
+	
+	# Returns the index of the element in array REF passed with the lowest comparative value
+	sub low {
+		shift if(substr($_[0],0,4) eq 'AI::'); 
+		my $ref1	=	shift;
+		
+		my ($el,$len,$tmp);
+		foreach $el (@{$ref1}) {
+			$len++;
+		}
+		$tmp=0;
+		for my $x (0..$len-1) {
+			$tmp = $x if((@{$ref1})[$x] < (@{$ref1})[$tmp]);
+		}
+		return $tmp;
+	}  
+	
+	# Returns a pcx object
+	sub load_pcx {
+		my $self	=	shift;
+		return AI::NeuralNet::BackProp::PCX->new($self,shift);
+	}	
+	
+	# Crunch a string of words into a map
+	sub crunch {
+		my $self	=	shift;
+		my (@map,$ic);
+		for my $a (0..$#_) {
+			$ic=$self->crunched($_[$a]);
+			if(!defined $ic) {
+				$self->{_CRUNCHED}->{LIST}->[$self->{_CRUNCHED}->{_LENGTH}++]=$_[$a];
+				@map[$a]=$self->{_CRUNCHED}->{_LENGTH};
+			} else {
+				@map[$a]=$ic;
+            }
+		}
+		return \@map;
+	}
+	
+	# Finds if a word has been crunched.
+	# Returns undef on failure, word index for success.
+	sub crunched {
+		my $self	=	shift;
+		for my $a (0..$self->{_CRUNCHED}->{_LENGTH}-1) {
+			return $a+1 if($self->{_CRUNCHED}->{LIST}->[$a] eq $_[0]);
+		}
+		return undef;
+	}
+	
+	# Uncrunches a map (array ref) into an array of words (not an array ref) and returns array
+	sub uncrunch {
+		my $self	=	shift;
+		my $map = shift;
+		my (@c,$el,$x);
+		foreach $el (@{$map}) {
+			$c[$x++] = $self->{_CRUNCHED}->{LIST}->[$el-1];
+		}
+		return @c;
+	}
 	
 	# Initialzes the base for a new neural network.
 	# It is recomended that you call learn() before run()ing a pattern.
@@ -285,6 +362,10 @@ package AI::NeuralNet::BackProp;
 		
 		my $layers	=	shift || 2;
 		my $size	=	shift || 1;
+		my $out		=	shift || $size;
+		
+		# Error checking
+		return undef if($out>$size);
 		
 		$self->{GROUPS}->{SIZE}			=	1;
 		$self->{GROUPS}->{CURRENT}  	=	0;
@@ -313,6 +394,8 @@ package AI::NeuralNet::BackProp;
 		
 		$self->{SIZE}	=	$size;
 		$self->{DIV}	=	$div;
+		$self->{OUT}	=	$out;
+		$self->{col_width}= 5;
 		
 		$self->initialize_group();	# Called to prevent a "cant call method X on undefined value" 
 									# incase we forget to "learn()" a pattern.
@@ -326,71 +409,37 @@ package AI::NeuralNet::BackProp;
 		my $file	=	shift;
 		my $size	=	$self->{SIZE};
 		my $div		=	$self->{DIV};
-	    my $gsize	=	$self->{GROUPS}->{SIZE};
-	    
-	    print "Saving to $file...\n";
+		my $out		=	$self->{OUT};
 	    
 	    my $db		=	AI::NeuralNet::BackProp::File->new($file);
 	    
 	    $db->select("root");
-	    $db->set("size",$size);
-	    $db->set("div",$div);
-	    $db->set("gsize",$gsize);
-	    $db->set("net",freeze($self->{NET}));
-	    $db->set("groups",freeze($self->{GROUPS}));
+	    $db->set("size",		$size);
+	    $db->set("div",			$div);
+	    $db->set("out",			$out);
+	    #$db->set("groups",		freeze($self->{GROUPS}));
 	    
-	    #my ($x,$group,$y,$z,$neuron);
-		#for($x=1;$x<$gsize;$x++) {
-		#	$db->select("root");
-		#	$group = $db->add_table("group$x");
-		#	$db->select($group);
-		#	
-		#	$db->set("map",join(',',@{$self->{GROUPS}->{DATA}->[$x]->{MAP}}));
-		#	$db->set("res",join(',',@{$self->{GROUPS}->{DATA}->[$x]->{RES}}));
-		#	
-			#for($y=0;$y<$div;$y++) {
-			#	$db->select($group);
-			#	$db->set("neuron$y",freeze($self->{NET}->[$x]->[$y]->{SYNAPSES}->{LIST}));
-			#}				
-		#}    
+		$db->set("crunch",		$self->{_CRUNCHED}->{_LENGTH});
 		
-		$db->writeout();
-	}
+		for my $a (0..$self->{_CRUNCHED}->{_LENGTH}-1) {
+			$db->set("c$a", $self->{_CRUNCHED}->{LIST}->[$a]);
+		}
 		
-	# Save entire network state to disk.
-	sub save {
-		my $self	=	shift;
-		my $file	=	shift;
-		my $size	=	$self->{SIZE};
-		my $div		=	$self->{DIV};
-	    my $gsize	=	$self->{GROUPS}->{SIZE};
+		my $w;
+		for my $a (0..$self->{SIZE}-1) {
+			$w="";
+			for my $b (0..$self->{DIV}-1) {
+				$w .= "$self->{NET}->[0]->[$a]->{SYNAPSES}->{LIST}->[$b]->{WEIGHT},";
+			}
+			chop($w);
+			$db->set("n$a",$w);
+		}
+	
+	    $db->writeout();
 	    
-	    print "Saving to $file...\n";
+	    undef $db;
 	    
-	    my $db		=	AI::NeuralNet::BackProp::File->new($file);
-	    
-	    $db->select("root");
-	    $db->set("size",	$size);
-	    $db->set("div",		$div);
-	    $db->set("net",		freeze($self->{NET}));
-	    $db->set("groups",	freeze($self->{GROUPS}));
-	    
-	    #my ($x,$group,$y,$z,$neuron);
-		#for($x=1;$x<$gsize;$x++) {
-		#	$db->select("root");
-		#	$group = $db->add_table("group$x");
-		#	$db->select($group);
-		#	
-		#	$db->set("map",join(',',@{$self->{GROUPS}->{DATA}->[$x]->{MAP}}));
-		#	$db->set("res",join(',',@{$self->{GROUPS}->{DATA}->[$x]->{RES}}));
-		#	
-			#for($y=0;$y<$div;$y++) {
-			#	$db->select($group);
-			#	$db->set("neuron$y",freeze($self->{NET}->[$x]->[$y]->{SYNAPSES}->{LIST}));
-			#}				
-		#}    
-		
-		$db->writeout();
+	    return $self;
 	}
 
 	# Load entire network state from disk.
@@ -398,20 +447,50 @@ package AI::NeuralNet::BackProp;
 		my $self	=	shift;
 		my $file	=	shift;
 	    
-	    print "Loading from $file...\n";
+	    return undef if(!(-f $file));
 	    
 	    my $db		=	AI::NeuralNet::BackProp::File->new($file);
 	    
 	    $db->select("root");
-	    $self->{SIZE} 	= $db->set("size");
-	    $self->{DIV} 	= $db->get("div");
-	    $self->{NET} 	= $db->get("net");
-	    $self->{GROUPS} = $db->get("groups");
+	    $self->{SIZE} 		= $db->get("size");
+	    $self->{DIV} 		= $db->get("div");
+	    $self->{OUT} 		= $db->get("out");
+	    #$self->{GROUPS}		= thaw($db->get("groups"));
 	    
+	   	$self->{_CRUNCHED}->{_LENGTH}	=	$db->get("crunch");
+		
+		for my $a (0..$self->{_CRUNCHED}->{_LENGTH}-1) {
+			$self->{_CRUNCHED}->{LIST}->[$a] = $db->get("c$a"); 
+		}
+		
+		$self->initialize_group();
+	    
+		my ($w,@l);
+		for my $a (0..$self->{SIZE}-1) {
+			$w=$db->get("n$a");
+			@l=split(/\,/,$w);
+			for my $b (0..$self->{DIV}-1) {
+				$self->{NET}->[0]->[$a]->{SYNAPSES}->{LIST}->[$b]->{WEIGHT}=$l[$b];
+			}
+		}
+	
 	    undef $db;
 	    
+	    return $self;
 	}
 
+	# Dumps the entire weigt matrix of the network to STDIO
+	sub show() {
+		my $self	=	shift;
+		for my $a (0..$self->{SIZE}-1) {
+			print "Neuron $a: ";
+			for my $b (0..$self->{DIV}-1) {
+				print $self->{NET}->[0]->[$a]->{SYNAPSES}->{LIST}->[$b]->{WEIGHT},"\t";
+			}
+			print "\n";
+		}
+	}
+	
 	# Used internally by new() and learn().
 	# This is the sub block that actually creats
 	# the connections between the synapse chains and
@@ -421,6 +500,7 @@ package AI::NeuralNet::BackProp;
 		my $self	=	shift;
 		my $size	=	$self->{SIZE};
 		my $div		=	$self->{DIV};
+		my $out		=	$self->{OUT};
 		my $x		=	0; 
 		my $y		=	0;
 		
@@ -433,6 +513,7 @@ package AI::NeuralNet::BackProp;
 		
 		# Create initial neuron packages in one long array for the entire group
 		for($y=0; $y<$size; $y++) {
+			#print "Initalizing neuron $y...     \r";
 			$self->{NET}->[$self->{GROUPS}->{CURRENT}]->[$y]=new AI::NeuralNet::BackProp::neuron();
 		}
 		
@@ -459,7 +540,8 @@ package AI::NeuralNet::BackProp;
 			# is an example. 3 and 2 are set by the new() constructor.
 			
 			for ($z=0; $z<$div; $z++) {
-				for ($aa=0; $aa<$div; $aa++) {
+				for ($aa=0; $aa<$div; $aa++) {      
+					#print "Layer: $y, Neuron: $z, Synapse: $aa...    \r";
 					$self->{NET}->[$self->{GROUPS}->{CURRENT}]->[$y+$z]->connect($self->{NET}->[$self->{GROUPS}->{CURRENT}]->[$y+$div+$aa]);
 				}
 				AI::NeuralNet::BackProp::out1 "\n";
@@ -480,7 +562,7 @@ package AI::NeuralNet::BackProp;
         
         for($y=0; $y<$div; $y++) {
 			$self->{_tmp_synapse} = $y;
-			$self->{NET}->[$self->{GROUPS}->{CURRENT}]->[$y]->register_synapse($self->{MAP});
+			$self->{NET}->[$self->{GROUPS}->{CURRENT}]->[$y]->register_synapse($self->{RUN});
 			$self->{NET}->[$self->{GROUPS}->{CURRENT}]->[$y]->connect($self->{RUN});
 		}
 		
@@ -556,15 +638,9 @@ package AI::NeuralNet::BackProp;
 		my $gsize	 =	  $self->{GROUPS}->{SIZE};
 		my ($t0,$t1,$td);
 		$t0 		 =	new Benchmark;
-        my (@score);
-		for(1..$gsize-1) {  
-			$score[$_] = pdiff($map,$self->{GROUPS}->{DATA}->[$_]->{MAP});
-			AI::NeuralNet::BackProp::out1 "Difference score for group $_: $score[$_]\n";
-		}
-		my $topi=1;
-		for(1..$gsize-1) {
-			$topi=$_ if($score[$_]<$score[$topi]);
-		}
+
+		my $topi = 0;
+		
 		$self->{GROUPS}->{CURRENT}=$self->{LAST_GROUP}=$topi;
 		$self->{RUN}->run($map);
 		$t1 = new Benchmark;
@@ -652,30 +728,30 @@ package AI::NeuralNet::BackProp;
 		my $self	=	shift;
 		my $omap	=	shift;
 		my $res		=	shift;
-		my $inc		=	shift || 0.20;
-		my $div		=	$self->{DIV};
+		my %args    =   @_;
+		my $inc 	=	$args{inc} || 0.20;
+		my $max     =   $args{max} || 1024;
+  		my $div		=	$self->{DIV};
 		my $size	=	$self->{SIZE};
 		my ($a,$b,$y,$flag,$map,$loop,$diff,$pattern);
 		my ($t0,$t1,$td);
 		my ($it0,$it1,$itd);
 		no strict 'refs';
 		
-		# Add a new group to network and save handle to it so it can
-		# be retrieved using pattern() method.
-		$self->{LAST_GROUP} = $self->{GROUPS}->{CURRENT} = $self->add_group($omap,$res);
-		
-		# Create neurons in group and link all packages together as needed.
-		$self->initialize_group();
+		$self->{LAST_GROUP} = $self->{GROUPS}->{CURRENT} = 0;
 		
 		# Start benchmark timer.
 		$t0 	=	new Benchmark;
         $flag 	=	0; 
-		$loop	=	0;
+		$loop	=	0;   
+		my $ldiff	=	0;
+		my $dinc	=	0.0001;
+		my $cdiff	=	0;
 		
 		# $flag only goes high when all neurons in output map compare exactly with
 		# desired result map.
 		#	
-		while(!$flag) {
+		while(!$flag && ($max ? $loop<$max : 1)) {
 			$it0 	=	new Benchmark;
 			
 			# Debugger
@@ -699,13 +775,22 @@ package AI::NeuralNet::BackProp;
 			# $inc, then the network would keep jumping back and forth over your desired 
 			# results because the increment was too high...it would try to push close to
 			# the desired result, only to fly over the other edge too far, therby trying
-			# to come back, over shooting again. What we do here is if the two maps
-			# have a difference percentage greater than 30, we slowly de-increment the learning
-			# ammount by .01, and if we hit 0 and we are still over 30, we go back up to a solid
-			# 1 as the learning ammount.
+			# to come back, over shooting again. 
+			# This simply adjusts the learning gradient proportionally to the ammount of
+			# convergance left as the difference decreases.
 			
-			$inc -= .001 if($diff>30);
-			$inc  = .3   if($inc<.0000000001);
+			
+			$inc   -= ($dinc*$diff);
+			$inc   = 0.01 if($inc < 0.0000000001);
+			
+			if($diff eq $ldiff) {
+				$cdiff++;
+				$inc += ($dinc*$diff)+($dinc*$cdiff*10);
+			} else {
+				$cdiff=0;
+			}
+			
+			$ldiff = $diff;
 			
 			# Debugging
 			AI::NeuralNet::BackProp::out4 "Difference: $diff\%\t Increment: $inc\n";
@@ -721,8 +806,10 @@ package AI::NeuralNet::BackProp;
 			for(0..$div-1) {
 				$a = ((@{$map})[$_]);
 				$b = ((@{$res})[$_]);
+				
 				AI::NeuralNet::BackProp::out1 "\nmap[$_] is $a\n";
 				AI::NeuralNet::BackProp::out1 "res[$_] is $b\n";
+				
 				if($a==$b) {
 					AI::NeuralNet::BackProp::out1 "Rewarding $self->{NET}->[$self->{GROUPS}->{CURRENT}]->[$y] at $y ($_ with $a) by $inc.\n";
 				} else {
@@ -744,8 +831,8 @@ package AI::NeuralNet::BackProp;
 			AI::NeuralNet::BackProp::out4 "Learning itetration $loop complete, timed at".timestr($itd,'noc','5.3f')."\n";
 			# Map the results from this loop.
 			AI::NeuralNet::BackProp::out2 "Map: \n";
-			AI::NeuralNet::BackProp::join_cols($map,5) if ($AI::NeuralNet::BackProp::DEBUG);
-		}	
+			AI::NeuralNet::BackProp::join_cols($map,$self->{col_width}) if ($AI::NeuralNet::BackProp::DEBUG);
+		}
 		
 		# Compile benchmarking info for entire learn() process and return it, save it, and
 		# display it.
@@ -761,6 +848,8 @@ package AI::NeuralNet::BackProp;
 
 # Internal input class. Not to be used directly.
 package AI::NeuralNet::BackProp::_run;
+	
+	use strict;
 	
 	# Dummy constructor.
 	sub new {
@@ -827,6 +916,8 @@ package AI::NeuralNet::BackProp::_run;
 # Internal output class. Not to be used directly.
 package AI::NeuralNet::BackProp::_map;
 	
+	use strict;
+	
 	# Dummy constructor.
 	sub new {
 		bless { PARENT => $_[1] }, $_[0]
@@ -858,7 +949,7 @@ package AI::NeuralNet::BackProp::_map;
 		$self->{OUTPUT}->[$sid]->{VALUE}	=	$value;
 		$self->{OUTPUT}->[$sid]->{FIRED}	=	1;
 		
-		AI::NeuralNet::BackProp::out1 "Received value $value and sid $sid...\n";
+		AI::NeuralNet::BackProp::out1 "Received value $self->{OUTPUT}->[$sid]->{VALUE} and sid $sid, self $self.\n";
 	}
 	
 	# Here we simply collect the value of every neuron connected to this
@@ -866,9 +957,18 @@ package AI::NeuralNet::BackProp::_map;
 	sub map {
 		my $self	=	shift;
 		my $size	=	$self->{PARENT}->{DIV};
+		my $out		=	$self->{PARENT}->{OUT};
+		my $divide  =	AI::NeuralNet::BackProp->intr($size/$out);
 		my @map = ();
-		for(0..$size-1) {
-			$map[$_]	=	$self->{OUTPUT}->[$_]->{VALUE};
+		my $value;
+		AI::NeuralNet::BackProp::out1 "Num output neurons: $out, Input neurons: $size, Division: $divide\n";
+		for(0..$out-1) {
+			$value=0;
+			for my $a (0..$divide-1) {
+				$value += $self->{OUTPUT}->[($_*$divide)+$a]->{VALUE};
+				AI::NeuralNet::BackProp::out1 "\$a is $a, index is ".(($_*$divide)+$a).", value is $self->{OUTPUT}->[($_*$divide)+$a]->{VALUE}\n";
+			}
+			$map[$_]	=	AI::NeuralNet::BackProp->intr($value/$divide);
 			AI::NeuralNet::BackProp::out1 "Map position $_ is $map[$_] in @{[\@map]} with self set to $self.\n";
 			$self->{OUTPUT}->[$_]->{FIRED}	=	0;
 		}
@@ -876,6 +976,133 @@ package AI::NeuralNet::BackProp::_map;
 	}
 1;
 			      
+# load_pcx() wrapper package
+package AI::NeuralNet::BackProp::PCX;
+
+	# Called by load_pcx in AI::NeuralNet::BackProp;
+	sub new {
+		my $type	=	shift;
+		my $self	=	{ 
+			parent  => $_[0],
+			file    => $_[1]
+		};
+		my (@a,@b)=load_pcx($_[1]);
+		$self->{image}=\@a;
+		$self->{palette}=\@b;
+		bless \%{$self}, $type;
+	}
+
+	# Returns a rectangular block defined by an array ref in the form of
+	# 		[$x1,$y1,$x2,$y2]
+	# Return value is an array ref
+	sub get_block {
+		my $self	=	shift;
+		my $ref		=	shift;
+		my ($x1,$y1,$x2,$y2)	=	@{$ref};
+		my @block	=	();
+		my $count	=	0;
+		for my $x ($x1..$x2-1) {
+			for my $y ($y1..$y2-1) {
+				$block[$count++]	=	$self->get($x,$y);
+			}
+		}
+		return \@block;
+	}
+			
+	# Returns pixel at $x,$y
+	sub get {
+		my $self	=	shift;
+		my ($x,$y)  =	(shift,shift);
+		return $self->{image}->[$y*320+$x];
+	}
+	
+	# Returns array of (r,g,b) value from palette index passed
+	sub rgb {
+		my $self	=	shift;
+		my $color	=	shift;
+		return ($self->{palette}->[$color]->{red},$self->{palette}->[$color]->{green},$self->{palette}->[$color]->{blue});
+	}
+		
+	# Returns mean of (rgb) value of palette index passed
+	sub avg {
+		my $self	=	shift;
+		my $color	=	shift;
+		return $self->{parent}->intr(($self->{palette}->[$color]->{red}+$self->{palette}->[$color]->{green}+$self->{palette}->[$color]->{blue})/3);
+	}
+	
+	# Loads and decompresses a PCX-format 320x200, 8-bit image file and returns 
+	# two arrays, first is a 64000-byte long array, each element contains a palette
+	# index, and the second array is a 255-byte long array, each element is a hash
+	# ref with the keys 'red', 'green', and 'blue', each key contains the respective color
+	# component for that color index in the palette.
+	sub load_pcx {
+		shift if(substr($_[0],0,4) eq 'AI::'); 
+		
+		# open the file
+		open(FILE, "$_[0]");
+		
+		my $tmp;
+		my @image;
+		my @palette;
+		my $data;
+		
+		# Read header
+		read(FILE,$tmp,128);
+		
+		# load the data and decompress into buffer
+		my $count=0;
+		
+		while($count<320*200) {
+		     # get the first piece of data
+		     read(FILE,$data,1);
+	         $data=ord($data);
+	         
+		     # is this a rle?
+		     if ($data>=192 && $data<=255) {
+		        # how many bytes in run?
+		        my $num_bytes = $data-192;
+		
+		        # get the actual $data for the run
+		        read(FILE, $data, 1);
+				$data=ord($data);
+		        # replicate $data in buffer num_bytes times
+		        while($num_bytes-->0) {
+	            	$image[$count++] = $data;
+		        } # end while
+		     } else {
+		        # actual $data, just copy it into buffer at next location
+		        $image[$count++] = $data;
+		     } # end else not rle
+		}
+		
+		# move to end of file then back up 768 bytes i.e. to begining of palette
+		seek(FILE,-768,2);
+		
+		# load the pallete into the palette
+		for my $index (0..255) {
+		    # get the red component
+		    read(FILE,$tmp,1);
+		    $palette[$index]->{red}   = ($tmp>>2);
+		
+		    # get the green component
+		    read(FILE,$tmp,1);
+			$palette[$index]->{green} = ($tmp>>2);
+		
+		    # get the blue component
+		    read(FILE,$tmp,1);
+			$palette[$index]->{blue}  = ($tmp>>2);
+		
+		}
+		
+		close(FILE);
+		
+		return @image,@palette;
+	}
+
+
+
+	
+	
 
 #-------------------------------
 # AI::NeuralNet::BackProp::File
@@ -998,7 +1225,7 @@ use strict;
 #### is 'broken' are the routines load() and save() themselves. This file
 #### interface 'works'.
 
-#########	use Storable;
+use Storable;
 
 
 #########################################
@@ -1825,6 +2052,15 @@ AI::NeuralNet::BackProp - A simple back-prop neural net that uses Delta's and He
 
 
 
+=head1 UPDATES
+
+This is version 0.42, the patch for the first public release which was version 0.40.
+It includes several updates and fixes, including more 'intelligent' learning, smaller
+memory size, actual loading and saving of network, internal support for strings as network
+maps and targets, and integrated support for direct loading of PCX-format bitmap files.
+
+
+
 =head1 DESCRIPTION
 
 AI::NeuralNet::BackProp is the flagship package for this file.
@@ -1835,11 +2071,11 @@ neruons of the network are implemented via the AI::NeuralNet::BackProp::neuron p
 	
 You constuct a new network via the new constructor:
 	
-	my $net = new AI::NeuralNet::BackProp(2,3);
+	my $net = new AI::NeuralNet::BackProp(2,3,1);
 		
 
-The new() constructor accepts two arguments, $layers and $size (in this example, $layers 
-is 2 and $size is 3).
+The new() constructor accepts two arguments and one optional argument, $layers, $size, and $outputs is optional (in this example, $layers 
+is 2, $size is 3, and $outputs is 1).
 
 $layers specifies the number of layers, including the input
 and the output layer, to use in each neural grouping. A new
@@ -1851,16 +2087,16 @@ in the layer below it.
 This diagram illustrates a simple network, created with a call
 to "new AI::NeuralNet::BackProp(2,2)" (2 layers, 2 neurons/layer).
 	                             	
-	 input
-	 /  \
-	O    O
-	|\  /|
-	| \/ |
-	| /\ |
-	|/  \|
-	O    O
-	 \  /
-	mapper
+     input
+     /  \
+    O    O
+    |\  /|
+    | \/ |
+    | /\ |
+    |/  \|
+    O    O
+     \  /
+    mapper
 
 In this diagram, each neuron is connected to one input of every
 neuron in the layer below it, but there are not connections
@@ -1902,14 +2138,9 @@ refrences of $size length. Example:
 	my @map = (0,1);
 	my @res = (1,0);
 	
-	$net->learn(\@map,\@res [, $inc]);
+	$net->learn(\@map,\@res);
 	
 	my $result = $net->run(\@map);
-
-$inc is an optinal learning speed increment. Good values are around 0.20
-and 0.30. You can experiement with $inc to achieve faster learning speeds.
-Some values of $inc work better for different maps. If $inc is ommitted,
-it will default to 0.30 for $inc internally.
 
 Now $result will conain (1,0), effectivly flipping the input pattern
 around. Obviously, the larger $size is, the longer it will take
@@ -1948,16 +2179,21 @@ the results the same as the above examples (as an array ref from $net->run()).
 
 =over 4
 
-=item new AI::NeuralNet::BackProp($layers, $size)
+=item new AI::NeuralNet::BackProp($layers, $size [, $outputs])
 
 Returns a newly created neural network from an C<AI::NeuralNet::BackProp>
 object. Each group of this network will have C<$layers> number layers in it
 and each layer will have C<$size> number of neurons in that layer.
 
+There is an optional parameter of $outputs, which specifies the number
+of output neurons to provide. If $outputs is not specified, $outputs
+defaults to equal $size. $outputs may not exceed $size. If $outputs
+exceeds $size, the new() constructor will return undef.
+
 Before you can really do anything useful with your new neural network
 object, you need to teach it some patterns. See the learn() method, below.
 
-=item $net->learn($input_map_ref, $desired_result_ref [, $learning_gradient ]);
+=item $net->learn($input_map_ref, $desired_result_ref [, options ]);
 
 This will 'teach' a network to associate an new input map with a desired resuly.
 It will return a string containg benchmarking information. You can retrieve the
@@ -1966,14 +2202,20 @@ with the pattern() method, below.
 
 The first two arguments must be array refs, and must be of the same length. 
 
+Options should be written on hash form, there is two options present as for
+now, inc=>$learning_gradient and max=>$maximum_iterations.
+ 
 $learning_gradient is an optional value used to adjust the weights of the internal
-connections. If $learning_gradient is ommitted, it defaults to 0.30.
+connections. If $learning_gradient is ommitted, it defaults to 0.20.
+ 
+$maximum_iterations is the maximum numbers of iteration the loop should do.
+It defaults to 1024.  Set it to 0 if you never want the loop to quit before
+the pattern is perfectly learned.
+
 
 =item $net->run($input_map_ref);
 
-This compares the input map with the learn()ed input map of each group, and the 
-group who's comparission comes out as the lowest percentage difference is 
-then used to run the input map. 
+This method will apply the given array ref at the input layer of the neural network.
 
 It will return undef on an error. An error is caused by one of two events.
 
@@ -1991,46 +2233,6 @@ shift all values of your map up one number to account for this if need be, and t
 one number from every element of the output to shift it down again. Let me know if anyone 
 comes up with a better way to do this.
 
-run() will store the pattern index of the group as created by learn(), so it can be 
-retrieved with the pattern() method, below.
-
-See notes on comparison between run() and slow_run() in NOTES section, below.	
-
-
-=item $net->slow_run($input_map_ref);
-
-When called with an array refrence to a pattern, returns a refrence
-to an array associated with that pattern. See usage in documentatio above.
-
-This slow_run() is different from run(), above, in that, the run() above
-compares the input map with the learn()ed input map of each group, and the 
-group who's comparission comes out as the lowest percentage difference is 
-then used to run the input map. 
-
-This slow_run() runs the input map through every neuron group and then compares
-the result map() with the learn()ed result map, and the result map that has the
-lowest comparrison percentage is returned as the output map. Some may argue
-that this could be more accurate. I don't know. I plan to run some more tests
-on the two methods, but right now I don't have the time. If anyone does 
-come up with any results, or even a better way to sort the outputs, let me know
-please (jdb@wcoil.com).
-
-slow_run() will store the pattern index of the group as created by learn(), so it can be 
-retrieved with the pattern() method, below.
-
-See notes on comparison between run() and slow_run() in NOTES section, below.	
-
-
-=item $net->pattern();
-
-This will return the pattern index of the last map learned, or the pattern index of the
-last map matched, whichever occured most recently. 
-
-This is useful if you don't care about the mapping output, but just what it mapped.
-For example, in the letters.pl example under the ./examples/ directory in the installation
-tree that you should have gotten when you downloaded this pacakge, this method is used
-to determine which letter was matched, rather than what the output is. See letters.pl
-for example usage.
 
 
 =item $net->benchmarked();
@@ -2070,8 +2272,26 @@ Level 4 is useful for seeing if you need to give a smaller learning incrememnt t
 I used level 4 debugging quite often in creating the letters.pl example script and the small_1.pl
 example script.
 
+An aditional parameter in the network that can be set is $net->{col_width}. This is useful
+for formating the debugging output of Level 4 if you are learning simple bitmaps. This will
+set the debugger to automatically insert a line break after that many elements in the map output
+when dumping the currently run map during a learn loop.
+
 Toggles debuging off when called with no arguments. 
 
+
+
+=item $net->save($filename);
+
+This will save the complete state of the network to disk, including all weights and any
+words crunched with crunch() . 
+
+
+
+=item $net->load($filename);
+
+This will load from disk any network saved by save() and completly restore the internal
+state at the point it was save() was called at.
 
 
 
@@ -2100,10 +2320,153 @@ percent sting.
 
 =item $net->intr($float);
 
-Rounds a floating-point number passed to an integer using sprintf() and int() , Provides
+Rounds a floating-point number rounded to an integer using sprintf() and int() , Provides
 better rounding than just calling int() on the float. Also used very heavily internally.
 
 
+
+=item $net->high($array_ref);
+
+Returns the index of the element in array REF passed with the highest comparative value.
+
+
+
+=item $net->low($array_ref);
+
+Returns the index of the element in array REF passed with the lowest comparative value.
+
+
+
+=item $net->show();
+
+This will dump a simple listing of all the weights of all the connections of every neuron
+in the network to STDIO.
+
+
+
+
+=item $net->crunch(qw( [...words...] ));
+
+This convets a qw()ed array of words passed into an array ref containing unique indexes
+to the words. The words are stored in an intenal array and preserved across load() and save()
+calls. This is designed to be used to generate unique maps sutible for passing to learn() and 
+run() directly. It returns an array ref.
+
+The words are not duplicated internally. For example:
+
+	$net->crunch(qw(How are you?));
+
+Will probably return an array ref containing 1,2,3. A subsequent call of:
+
+    $net->crunch(qw(How is Jane?));
+
+Will probably return an array ref containing 1,4,5. Notice, the first element stayed
+the same. That is because it already stored the word "How". So, each word is stored
+only once internally and the returned array ref reflects that.
+
+
+=item $net->uncrunch($array_ref);
+
+Uncrunches a map (array ref) into an array of words (not an array ref) and returns array.
+This is ment to be used as a counterpart to the crunch() method, above, possibly to uncrunch()
+the output of a run() call. Consider the below code (also in ./examples/ex1.pl):
+                           
+	use AI::NeuralNet::BackProp;
+	my $net = AI::NeuralNet::BackProp->new(2,3);
+	
+	for (0..3) {
+		$net->learn($net->crunch(qw(I love chips.)),  $net->crunch(qw(That's Junk Food!)));
+		$net->learn($net->crunch(qw(I love apples.)), $net->crunch(qw(Good, Healthy Food.)));
+		$net->learn($net->crunch(qw(I love pop.)),    $net->crunch(qw(That's Junk Food!)));
+		$net->learn($net->crunch(qw(I love oranges.)),$net->crunch(qw(Good, Healthy Food.)));
+	}
+	
+	my $response = $net->run($net->crunch(qw(I love corn.)));
+	
+	print join(' ',$net->uncrunch($response));
+
+
+On my system, this responds with, "Good, Healthy Food." If you try to run crunch() with
+qw(I love pop.), though, you will probably get "Food! apples. apples." (At least it returns
+that on my system.) As you can see, the associations are not yet perfect, but it can make
+for some interesting demos!
+
+
+
+=item $net->crunched($word);
+
+This will return undef if the word is not in the internal crunch list, or it will return the
+index of the word if it exists in the crunch list. 
+
+
+
+
+=item $net->load_pcx($filename);
+
+Oh heres a treat... this routine will load a PCX-format file (yah, I know...ancient format... but
+it is the only one I could find specs for to write it in Perl. If anyone can get specs for
+any other formats, or could write a loader for them, I would be very grateful!) Anyways, a PCX-format
+file that is exactly 320x200 with 8 bits
+per pixel, with pure Perl. It returns a blessed refrence to a AI::NeuralNet::BackProp::PCX object,
+which supports the following routinges/members. See example files pcx.pl and pcx2.pl in the
+./examples/ directory.
+
+
+
+=item $pcx->{image}
+
+This is an array refrence to the entire image. The array containes exactly 64000 elements, each
+element contains a number corresponding into an index of the palette array, details below.
+
+
+
+=item $pcx->{palette}
+
+This is an array ref to an AoH (array of hashes). Each element has the following three keys:
+	
+	$pcx->{palette}->[0]->{red};
+	$pcx->{palette}->[0]->{green};
+	$pcx->{palette}->[0]->{blue};
+
+Each is in the range of 0..63, corresponding to their named color component.
+
+
+
+=item $pcx->get_block($array_ref);
+
+Returns a rectangular block defined by an array ref in the form of:
+	
+	[$left,$top,$right,$bottom]
+
+These must be in the range of 0..319 for $left and $right, and the range of 0..199 for
+$top and $bottom. The block is returned as an array ref with horizontal lines in sequental order.
+I.e. to get a pixel from [2,5] in the block, and $left-$right was 20, then the element in 
+the array ref containing the contents of coordinates [2,5] would be found by [5*20+2] ($y*$width+$x).
+    
+	print (@{$pcx->get_block(0,0,20,50)})[5*20+2];
+
+This would print the contents of the element at block coords [2,5].
+
+
+
+=item $pcx->get($x,$y);
+
+Returns the value of pixel at image coordinates $x,$y.
+$x must be in the range of 0..319 and $y must be in the range of 0..199.
+
+
+
+=item $pcx->rgb($index);
+
+Returns a 3-element array (not array ref) with each element corresponding to the red, green, or
+blue color components, respecitvely.
+
+
+
+=item $pcx->avg($index);	
+
+Returns the mean value of the red, green, and blue values at the palette index in $index.
+	
 
 
 
@@ -2118,6 +2481,11 @@ database system. It is used internally by C<AI::NeuralNet::BackProp> for
 storage and retrival of network states. It can also be used independently
 of C<AI::NeuralNet::BackProp>. PODs are not yet included for this package, I hope
 to include documentation for this package in future releases.
+
+C<AI::NeuralNet::BackProp::File> depends on C<Storable>, version 0.611 for low-
+level disk access. This dependency is noted in Makefile.PL, and should be handled
+automatically when you installe this C<AI::NeuralNet::BackProp>.
+
 
 =item AI::NeuralNet::BackProp::neuron
 
@@ -2139,51 +2507,6 @@ never need to call any of the IO packs. directly. Instead, they are called whene
 you use the run() or learn() methods of your network.
         
 
-=head1 NOTES
-
-=head2 run() and slow_run() compared
-
-Authors thoughts...
-
-Hmm.. this could be something. I just realized:
-With slow_run() , it compares the _outputs_
-(result of each group running input map) with
-the desired result (output) map of each group. 
-run() only compares the input map with the learn() ed
-input map. 
-
-With run() , that means that the first group that matches
-closest with learn() ed maps will be run, even if you
-have learned the same map with different desired results.
-
-With slow_run() , you could conceivably learn one input
-map with multiple desired results, and then slow_run() will
-match the result from the input map against all desired results,
-and return the one that matches closest.
-
-Intersting idea. For now, I don't see much of a need for 
-multiple desired asociations with same input map. 
-
-Please let me know if anyone sees any other pros or cons
-to this issue, and what you think should be done. 
-
-
-=head2 load() and save()
-
-These are two methods I have not documented, as they don't 
-work (correctly) yet. They rely on the Storable package, not
-included, and the AI::NeuralNet::BackProp::File pacakge, 
-included here. 
-
-The AI::NeuralNet::BackProp::File package works fine, the
-problem lies in the load() and save() routines themselves. 
-It seems the freeze() and thaw() functions aren't handling
-the refrences very well. 
-
-I included these functions in this beta release in case anyone
-felt dareing enough to try to get them working themselves. If you
-do, I<please> send me a copy of the code! :-)
-
 
 
 =head1 BUGS
@@ -2204,7 +2527,10 @@ Josiah Bryan F<E<lt>jdb@wcoil.comE<gt>>
 Copyright (c) 2000 Josiah Bryan. All rights reserved. This program is free software; 
 you can redistribute it and/or modify it under the same terms as Perl itself.
 
-The C<AI::NeuralNet::BackProp> and related modules are free software. THEY COMES WITHOUT WARRANTY OF ANY KIND.
+The C<AI::NeuralNet::BackProp> and related modules are free software. THEY COME WITHOUT WARRANTY OF ANY KIND.
+                                                             
+Many thanks to Tobias Bronx, F<E<lt>tobiasb@odin.funcom.comE<gt>> for many tips, suggestions, and 
+the occasional argument or two. Thanks Tobias!
 
 =head1 DOWNLOAD
 

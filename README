@@ -1,9 +1,16 @@
+NOTE: This is version 0.42, the patch for the first public release 
+which was version 0.40. It includes several updates and fixes, 
+including more 'intelligent' learning, smaller memory size, actual 
+loading and saving of network, internal support for strings as network
+maps and targets, and integrated support for direct loading of PCX-format 
+bitmap files, as well as 11 new examples.
+
 AI::NeuralNet::BackProp is a simply back-propagation,
 feed-foward neural network designed to learn using
 a generalization of the Delta rule and a bit of Hopefield
 theory. Still in beta stages.
 
-Be sure to checkout the ./examples/ directory for 5 different
+Be sure to checkout the ./examples/ directory for 17 different
 example scripts using the AI::NeuralNet::BackProp network.
 
 Use it, let me know what you all think. This is just a

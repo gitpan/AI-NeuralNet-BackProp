@@ -22,7 +22,7 @@ print "$out\n";
 $out = ($net->run([3,1,1]))?"ok 5":"not ok 5";
 print "$out\n";
 
-$out = ($net->intr(0.5) eq 1)?"ok 6":"not ok 6";
+$out = ($net->intr(0.51) eq 1)?"ok 6":"not ok 6";
 print "$out\n";
 
 

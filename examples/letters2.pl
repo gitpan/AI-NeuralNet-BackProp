@@ -1,6 +1,6 @@
 =begin
 
-File:   letters.pl
+File:   letters2.pl
 Author: Josiah Bryan, jdb@wcoil.com
 
 This is an example of image recognition.
@@ -10,9 +10,11 @@ each letter, using each letters matrix as its own desired result
 pattern. Then we present the network with a deformed J and see how
 well it detects the pattern.
 
-I have included the complete learned network in letters.net. This should
-therefore load the network without having to learn it. If, for some reason,
-there is an error loading the network, it will procede to re-learn the network.
+This is a modification of the original letters.pl script to only
+use one output neuron and associate the output neuron with the number
+of the pattern being learned.
+
+A trained network is also included in letters2.net.
 
 NOTE: THE LEARNING LOOP TAKES A _VERY_ LONG TIME. (Up to 1 hour I have seen.)
 
@@ -20,8 +22,8 @@ NOTE: THE LEARNING LOOP TAKES A _VERY_ LONG TIME. (Up to 1 hour I have seen.)
 
 	use AI::NeuralNet::BackProp;
 
-	# Create a new network with 2 layers and 35 neurons in each layer.
-	my $net = new AI::NeuralNet::BackProp(2,35);
+	# Create a new network with 2 layers and 35 neurons in each layer, with 1 output neuron
+	my $net = new AI::NeuralNet::BackProp(2,35,1);
 	
 	# Debug level of 4 gives JUST learn loop iteteration benchmark and comparrison data 
 	# as learning progresses.
@@ -271,26 +273,24 @@ NOTE: THE LEARNING LOOP TAKES A _VERY_ LONG TIME. (Up to 1 hour I have seen.)
         ]
      ];
 	
-	if(!$net->load("letters.net")) {
+	if(!$net->load("letters2.net")) {
 		print "\nLearning started...\n";
-		
-		for(0..28) {
-			print "\nLearning index $_, map:\n";
-			$net->join_cols($letters[0][$_],5);
-			print $net->learn($letters[0][$_],$letters[0][$_],inc=>0.15);
+	    for my $letter (0..28) {
+			print "\nLearning index $letter, map:\n";
+			$net->join_cols($letters[0][$letter],5);
+			print $net->learn($letters[0][$letter],[$letter],inc=>0.2);
 		}
-		
 		print "Learning done.\n";
 	}
 			
 	# Build a test map 
-	my @tmp	=	(1,2,2,2,1,
+	my @tmp	=	(2,1,1,1,2,
 				 1,2,2,2,1,
 				 1,2,2,2,1,
+				 1,1,1,1,1,
 				 1,2,2,2,1,
-				 1,1,2,1,1,
-				 2,1,2,1,2,
-				 2,2,1,2,2);
+				 1,2,2,2,1,
+				 1,2,2,2,1);
 	
 	# Display test map
 	print "\nTest map:\n";
@@ -304,16 +304,7 @@ NOTE: THE LEARNING LOOP TAKES A _VERY_ LONG TIME. (Up to 1 hour I have seen.)
 	print "Test run complete.\n";
 	
 	# Display network results
-	print "\nMatched test pattern to pattern index ".$net->pattern()."\n";
-	print "Mapping results from $map:\n";
-	$net->join_cols($map,5);
+	print "Letter index matched: ",(@{$map})[0],"\n";
 	
-	# Calculate percentage diffrence, returning a string formated with "%.1f", represinting
-	# the percent diffrence between the two array refences passed.
-	# FYI: I have found with the above test map and original maps, that the most difference,
-	# or 'noise' the network can handle is 40.0% before the network output map 'peaks' (all
-	# outputs high.) Of course, I have also seen it peek at 37.5% and lower, too. Maximum 
-	# noise I have acheived w/o peaking is 40.0%.
-	print "Percentage difference between original and test map: ".AI::NeuralNet::BackProp::pdiff($letters[0][$net->pattern()-1],\@tmp)."%\n";
-	
-	$net->save("letters.net");
+	# Save learned network
+	$net->save("letters2.net");
